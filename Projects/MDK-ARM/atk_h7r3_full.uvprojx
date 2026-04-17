@@ -405,11 +405,6 @@
               <FilePath>..\..\User\app_x-cube-ai.c</FilePath>
             </File>
             <File>
-              <FileName>camera_workflow.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\User\app\camera_workflow.c</FilePath>
-            </File>
-            <File>
               <FileName>network.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\User\network.c</FilePath>

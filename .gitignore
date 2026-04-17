@@ -1,0 +1,33 @@
+# Build output
+/Output/
+
+# Keil MDK user-specific files
+*.uvoptx
+*.uvguix*
+
+# Keil / ARMClang generated files
+*.axf
+*.hex
+*.bin
+*.map
+*.dep
+*.d
+*.o
+*.crf
+*.lst
+*.lib
+*.build_log.htm
+
+# Debug / trace / temporary files
+*.bak
+*.tmp
+*.temp
+*.log
+
+# Keil debug configuration is often machine/user specific
+Projects/MDK-ARM/DebugConfig/
+
+# Keep project and source assets tracked
+!*.uvprojx
+!network_data.bin
+!User/Script/*.sct
