@@ -410,6 +410,16 @@
               <FilePath>..\..\User\app\camera_workflow.c</FilePath>
             </File>
             <File>
+              <FileName>cart_service.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\User\app\cart_service.c</FilePath>
+            </File>
+            <File>
+              <FileName>product_catalog.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\User\app\product_catalog.c</FilePath>
+            </File>
+            <File>
               <FileName>network.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\User\network.c</FilePath>

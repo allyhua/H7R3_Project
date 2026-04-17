@@ -7,6 +7,7 @@ extern "C" {
 
 #include <stdint.h>
 #include "app_x-cube-ai.h"
+#include "app/cart_service.h"
 
 typedef enum
 {
@@ -41,6 +42,8 @@ typedef struct
     uint32_t flow_start_cycles;
     uint32_t pending_image_refresh_tick_ms;
     uint8_t pending_image_refresh;
+    cart_context_t cart;
+    cart_add_result_t last_cart_add;
     camera_trigger_state_t trigger_state;
     char status_text[48];
 } camera_workflow_state_t;
@@ -48,6 +51,9 @@ typedef struct
 int camera_workflow_init(camera_workflow_state_t *state);
 void camera_workflow_handle_capture(camera_workflow_state_t *state);
 void camera_workflow_process(camera_workflow_state_t *state);
+int camera_workflow_remove_product(camera_workflow_state_t *state, product_id_t product_id);
+void camera_workflow_clear_cart(camera_workflow_state_t *state);
+const cart_item_t *camera_workflow_get_cart_items(const camera_workflow_state_t *state, uint32_t *out_count);
 
 #ifdef __cplusplus
 }

@@ -8,6 +8,7 @@
 #include "./BSP/LED/led.h"
 #include "./BSP/OV2640/ov2640.h"
 #include "ai_class_labels.h"
+#include "app/product_catalog.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -30,6 +31,7 @@ static uint32_t g_hx711_tare = 0U;
 static void camera_set_status(camera_workflow_state_t *state, camera_trigger_state_t next_state, const char *status_text);
 static void camera_update_text_only(const camera_workflow_state_t *state);
 static uint8_t hx711_measure_weight_gram(uint32_t *weight_gram);
+static void camera_log_cart_summary(const cart_context_t *cart);
 
 static uint32_t perf_cycle_counter_get(void)
 {
@@ -245,6 +247,77 @@ static void camera_update_text_only(const camera_workflow_state_t *state)
     camera_draw_text_overlay(state);
 }
 
+static void camera_log_cart_summary(const cart_context_t *cart)
+{
+    uint32_t idx;
+    uint32_t total_price_yuan = 0U;
+    uint32_t total_price_cent = 0U;
+
+    if (cart == 0)
+    {
+        return;
+    }
+
+    total_price_yuan = cart->total_price_cent / 100U;
+    total_price_cent = cart->total_price_cent % 100U;
+    printf("[CART] -------------------------------------------------------------\r\n");
+    printf("[CART] %-12s %-12s %-12s %-12s\r\n", "Name", "Weight/Qty", "UnitPrice", "Total");
+    printf("[CART] -------------------------------------------------------------\r\n");
+
+    for (idx = 0U; idx < PRODUCT_ID_COUNT; ++idx)
+    {
+        const cart_item_t *item = &cart->items[idx];
+        char weight_or_qty[16];
+        char unit_price[16];
+        char total_price[16];
+
+        if (item->line_valid == 0U)
+        {
+            continue;
+        }
+
+        if (item->pricing_mode == PRODUCT_PRICING_BY_WEIGHT)
+        {
+            snprintf(weight_or_qty,
+                     sizeof(weight_or_qty),
+                     "%lu.%03lukg",
+                     (unsigned long)(item->total_weight_g / 1000U),
+                     (unsigned long)(item->total_weight_g % 1000U));
+            snprintf(unit_price,
+                     sizeof(unit_price),
+                     "%lu.%02lu/kg",
+                     (unsigned long)(item->unit_price_cent / 100U),
+                     (unsigned long)(item->unit_price_cent % 100U));
+        }
+        else
+        {
+            snprintf(weight_or_qty, sizeof(weight_or_qty), "%lu pcs", (unsigned long)item->total_count);
+            snprintf(unit_price,
+                     sizeof(unit_price),
+                     "%lu.%02lu/pc",
+                     (unsigned long)(item->unit_price_cent / 100U),
+                     (unsigned long)(item->unit_price_cent % 100U));
+        }
+
+        snprintf(total_price,
+                 sizeof(total_price),
+                 "%lu.%02lu",
+                 (unsigned long)(item->subtotal_cent / 100U),
+                 (unsigned long)(item->subtotal_cent % 100U));
+
+        printf("[CART] %-12s %-12s %-12s %-12s\r\n",
+               item->product_name,
+               weight_or_qty,
+               unit_price,
+               total_price);
+    }
+
+    printf("[CART] -------------------------------------------------------------\r\n");
+    printf("[CART] CartTotal: %lu.%02lu yuan\r\n",
+           (unsigned long)total_price_yuan,
+           (unsigned long)total_price_cent);
+}
+
 static void camera_set_status(camera_workflow_state_t *state, camera_trigger_state_t next_state, const char *status_text)
 {
     if ((state == NULL) || (status_text == NULL))
@@ -314,6 +387,8 @@ int camera_workflow_init(camera_workflow_state_t *state)
     state->flow_start_cycles = 0U;
     state->pending_image_refresh_tick_ms = 0U;
     state->pending_image_refresh = 0U;
+    cart_service_init(&state->cart);
+    memset(&state->last_cart_add, 0, sizeof(state->last_cart_add));
     state->trigger_state = CAMERA_TRIGGER_EMPTY;
     memset(state->status_text, 0, sizeof(state->status_text));
 
@@ -373,6 +448,9 @@ void camera_workflow_handle_capture(camera_workflow_state_t *state)
     float wait_stable_ms = 0.0f;
     float stable_to_text_ms;
     float total_to_text_ms;
+    const char *ai_label_name;
+    const product_info_t *product;
+    cart_add_status_t cart_status = CART_ADD_ERR_UNKNOWN_PRODUCT;
 
     if (state == NULL)
     {
@@ -412,6 +490,42 @@ void camera_workflow_handle_capture(camera_workflow_state_t *state)
 
     state->weight_gram = state->stable_weight_gram;
     state->weight_valid = 1U;
+
+    ai_label_name = ai_class_label_get(state->last_result.top1_index);
+    if (classify_ok != 0U)
+    {
+        product = product_catalog_find_by_ai_label(ai_label_name);
+        if (product != 0)
+        {
+            cart_status = cart_service_add_item(&state->cart,
+                                                product,
+                                                state->stable_weight_gram,
+                                                &state->last_cart_add);
+            if (cart_status == CART_ADD_OK)
+            {
+                printf("[CART] Added %s, measured=%lu g, counted=%lu, subtotal=%lu.%02lu yuan\r\n",
+                       state->last_cart_add.product_name,
+                       (unsigned long)state->last_cart_add.measured_weight_g,
+                       (unsigned long)state->last_cart_add.counted_units,
+                       (unsigned long)(state->last_cart_add.subtotal_cent / 100U),
+                       (unsigned long)(state->last_cart_add.subtotal_cent % 100U));
+                camera_log_cart_summary(&state->cart);
+            }
+            else
+            {
+                printf("[CART] Add failed for %s, status=%d, measured=%lu g\r\n",
+                       ai_label_name,
+                       (int)cart_status,
+                       (unsigned long)state->stable_weight_gram);
+            }
+        }
+        else
+        {
+            printf("[CART] Unknown AI label: %s\r\n", ai_label_name);
+            cart_status = CART_ADD_ERR_UNKNOWN_PRODUCT;
+        }
+    }
+
     weight_end_cycles = perf_cycle_counter_get();
 
     /* Update the result text first so the user can see the outcome before the
@@ -573,4 +687,34 @@ void camera_workflow_process(camera_workflow_state_t *state)
             camera_set_status(state, CAMERA_TRIGGER_EMPTY, "Please place an item");
             break;
     }
+}
+
+int camera_workflow_remove_product(camera_workflow_state_t *state, product_id_t product_id)
+{
+    if (state == 0)
+    {
+        return -1;
+    }
+
+    return cart_service_remove_item(&state->cart, product_id);
+}
+
+void camera_workflow_clear_cart(camera_workflow_state_t *state)
+{
+    if (state == 0)
+    {
+        return;
+    }
+
+    cart_service_clear(&state->cart);
+}
+
+const cart_item_t *camera_workflow_get_cart_items(const camera_workflow_state_t *state, uint32_t *out_count)
+{
+    if (state == 0)
+    {
+        return 0;
+    }
+
+    return cart_service_get_items(&state->cart, out_count);
 }
