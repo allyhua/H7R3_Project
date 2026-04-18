@@ -2,17 +2,12 @@
 
 #include <string.h>
 
-/*
- * Pricing assumptions used for the current prototype.
- * These values are centralized here so they can be tuned later without
- * touching the cart logic or workflow state machine.
- */
 static const product_info_t g_product_catalog[PRODUCT_ID_COUNT] = {
-    {PRODUCT_ID_APPLE,          "Apple",  "Apple", PRODUCT_PRICING_BY_WEIGHT,            1280U, "yuan/kg",   "kg",  0U,   80U,  5000U,  0U},
-    {PRODUCT_ID_BANANA,         "Banana", "Banana", PRODUCT_PRICING_BY_WEIGHT,            880U, "yuan/kg",   "kg",  0U,   80U,  5000U,  0U},
-    {PRODUCT_ID_ORANGE,         "Orange", "Orange", PRODUCT_PRICING_BY_WEIGHT,            980U, "yuan/kg",   "kg",  0U,   80U,  5000U,  0U},
-    {PRODUCT_ID_NONGFU_SPRING,  "NFSQ",   "NFSQ",  PRODUCT_PRICING_BY_COUNT_FROM_WEIGHT, 200U, "yuan/bottle", "pcs", 596U, 350U, 4000U, 60U},
-    {PRODUCT_ID_YIBAO,          "Yibao",  "Yibao", PRODUCT_PRICING_BY_COUNT_FROM_WEIGHT, 200U, "yuan/bottle", "pcs", 570U, 330U, 4000U, 60U}
+    {PRODUCT_ID_APPLE,          "Apple",   "Apple",  PRODUCT_PRICING_BY_WEIGHT,            1280U, "yuan/kg", "kg",  0U,   80U, 5000U, 0U},
+    {PRODUCT_ID_BANANA,         "Banana",  "Banana", PRODUCT_PRICING_BY_WEIGHT,             880U, "yuan/kg", "kg",  0U,   80U, 5000U, 0U},
+    {PRODUCT_ID_ORANGE,         "Orange",  "Orange", PRODUCT_PRICING_BY_WEIGHT,             980U, "yuan/kg", "kg",  0U,   80U, 5000U, 0U},
+    {PRODUCT_ID_NONGFU_SPRING,  "NFSpring","NFSQ",   PRODUCT_PRICING_BY_COUNT_FROM_WEIGHT,  200U, "yuan/pc", "pc", 596U, 350U, 4000U, 60U},
+    {PRODUCT_ID_YIBAO,          "Yibao",   "Yibao",  PRODUCT_PRICING_BY_COUNT_FROM_WEIGHT,  200U, "yuan/pc", "pc", 570U, 330U, 4000U, 60U}
 };
 
 const product_info_t *product_catalog_get(product_id_t product_id)

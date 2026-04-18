@@ -32,6 +32,7 @@ static void camera_set_status(camera_workflow_state_t *state, camera_trigger_sta
 static void camera_update_text_only(const camera_workflow_state_t *state);
 static uint8_t hx711_measure_weight_gram(uint32_t *weight_gram);
 static void camera_log_cart_summary(const cart_context_t *cart);
+static void camera_push_notice(camera_workflow_state_t *state, camera_notice_type_t notice_type, const char *notice_text);
 
 static uint32_t perf_cycle_counter_get(void)
 {
@@ -244,7 +245,7 @@ static void camera_draw_text_overlay(const camera_workflow_state_t *state)
 
 static void camera_update_text_only(const camera_workflow_state_t *state)
 {
-    camera_draw_text_overlay(state);
+    (void)state;
 }
 
 static void camera_log_cart_summary(const cart_context_t *cart)
@@ -331,6 +332,18 @@ static void camera_set_status(camera_workflow_state_t *state, camera_trigger_sta
     camera_update_text_only(state);
 }
 
+static void camera_push_notice(camera_workflow_state_t *state, camera_notice_type_t notice_type, const char *notice_text)
+{
+    if ((state == NULL) || (notice_text == NULL))
+    {
+        return;
+    }
+
+    state->notice_pending = 1U;
+    state->notice_type = notice_type;
+    snprintf(state->notice_text, sizeof(state->notice_text), "%s", notice_text);
+}
+
 static void camera_draw_overlay(const camera_workflow_state_t *state)
 {
     uint16_t box_x1;
@@ -373,6 +386,7 @@ int camera_workflow_init(camera_workflow_state_t *state)
     state->last_result.top1_probability = 0.0f;
     state->last_result.top1_logit = 0.0f;
     state->last_result_valid = 0U;
+    state->capture_counter = 0U;
     state->inference_counter = 0U;
     state->weight_gram = 0U;
     state->weight_valid = 0U;
@@ -387,10 +401,13 @@ int camera_workflow_init(camera_workflow_state_t *state)
     state->flow_start_cycles = 0U;
     state->pending_image_refresh_tick_ms = 0U;
     state->pending_image_refresh = 0U;
+    state->notice_pending = 0U;
+    state->notice_type = CAMERA_NOTICE_NONE;
     cart_service_init(&state->cart);
     memset(&state->last_cart_add, 0, sizeof(state->last_cart_add));
     state->trigger_state = CAMERA_TRIGGER_EMPTY;
     memset(state->status_text, 0, sizeof(state->status_text));
+    memset(state->notice_text, 0, sizeof(state->notice_text));
 
     printf("[CAM] Initializing LCD and weight sensor...\r\n");
     lcd_init();
@@ -431,8 +448,7 @@ int camera_workflow_init(camera_workflow_state_t *state)
            state->frame_width,
            state->frame_height,
            CAMERA_FRAME_BUFFER_ADDR);
-    camera_set_status(state, CAMERA_TRIGGER_EMPTY, "Please place an item");
-    camera_draw_overlay(state);
+    camera_set_status(state, CAMERA_TRIGGER_EMPTY, "Place item");
 
     return 0;
 }
@@ -466,6 +482,8 @@ void camera_workflow_handle_capture(camera_workflow_state_t *state)
     }
     dcmipp_start();
     capture_end_cycles = perf_cycle_counter_get();
+    state->capture_counter++;
+    memset(&state->last_cart_add, 0, sizeof(state->last_cart_add));
 
     if (APP_AI_ClassifyRgb565Roi((const uint16_t *)camera_date_buf,
                                  state->frame_width,
@@ -485,6 +503,7 @@ void camera_workflow_handle_capture(camera_workflow_state_t *state)
     {
         state->last_result_valid = 0U;
         state->recognition_time_valid = 0U;
+        camera_push_notice(state, CAMERA_NOTICE_RECOGNIZE_FAIL, "Recognition failed. Remove item and retry.");
     }
     infer_end_cycles = perf_cycle_counter_get();
 
@@ -517,24 +536,22 @@ void camera_workflow_handle_capture(camera_workflow_state_t *state)
                        ai_label_name,
                        (int)cart_status,
                        (unsigned long)state->stable_weight_gram);
+                camera_push_notice(state, CAMERA_NOTICE_RECOGNIZE_FAIL, "Weight mismatch. Please place item again.");
             }
         }
         else
         {
             printf("[CART] Unknown AI label: %s\r\n", ai_label_name);
             cart_status = CART_ADD_ERR_UNKNOWN_PRODUCT;
+            camera_push_notice(state, CAMERA_NOTICE_RECOGNIZE_FAIL, "Unknown product. Please retry.");
         }
     }
 
     weight_end_cycles = perf_cycle_counter_get();
 
-    /* Update the result text first so the user can see the outcome before the
-       slower full-frame image refresh happens. */
-    camera_draw_text_overlay(state);
     text_end_cycles = perf_cycle_counter_get();
-
-    state->pending_image_refresh = 1U;
-    state->pending_image_refresh_tick_ms = HAL_GetTick() + CAMERA_IMAGE_REFRESH_DELAY_MS;
+    state->pending_image_refresh = 0U;
+    state->pending_image_refresh_tick_ms = 0U;
     stable_to_text_ms = perf_cycles_to_ms(text_end_cycles - total_start_cycles);
     total_to_text_ms = wait_stable_ms + stable_to_text_ms;
 
@@ -604,15 +621,6 @@ void camera_workflow_process(camera_workflow_state_t *state)
         weight_delta = state->last_sample_weight_gram - state->weight_gram;
     }
 
-    if ((state->pending_image_refresh != 0U) &&
-        ((int32_t)(now_tick_ms - state->pending_image_refresh_tick_ms) >= 0))
-    {
-        state->pending_image_refresh = 0U;
-        camera_display_snapshot(state);
-        camera_draw_overlay(state);
-        printf("[FLOW] Deferred image refresh done\r\n");
-    }
-
     switch (state->trigger_state)
     {
         case CAMERA_TRIGGER_EMPTY:
@@ -631,13 +639,13 @@ void camera_workflow_process(camera_workflow_state_t *state)
         case CAMERA_TRIGGER_DETECT_PLACEMENT:
             if (state->weight_gram <= CAMERA_EMPTY_THRESHOLD_G)
             {
-                camera_set_status(state, CAMERA_TRIGGER_EMPTY, "Please place an item");
+                camera_set_status(state, CAMERA_TRIGGER_EMPTY, "Place item");
             }
             else
             {
                 state->stable_start_tick_ms = now_tick_ms;
                 state->stable_weight_gram = state->weight_gram;
-                camera_set_status(state, CAMERA_TRIGGER_WAIT_STABLE, "Checking weight stability");
+                camera_set_status(state, CAMERA_TRIGGER_WAIT_STABLE, "Checking weight");
             }
             break;
 
@@ -645,7 +653,7 @@ void camera_workflow_process(camera_workflow_state_t *state)
             if (state->weight_gram <= CAMERA_EMPTY_THRESHOLD_G)
             {
                 printf("[FLOW] Item removed before stability\r\n");
-                camera_set_status(state, CAMERA_TRIGGER_EMPTY, "Please place an item");
+                camera_set_status(state, CAMERA_TRIGGER_EMPTY, "Place item");
             }
             else if (weight_delta <= CAMERA_STABLE_DELTA_G)
             {
@@ -654,7 +662,14 @@ void camera_workflow_process(camera_workflow_state_t *state)
                 {
                     camera_set_status(state, CAMERA_TRIGGER_RECOGNIZING, "Weight stable, recognizing");
                     camera_workflow_handle_capture(state);
-                    camera_set_status(state, CAMERA_TRIGGER_WAIT_REMOVE, "Recognition done, remove item");
+                    if (state->last_cart_add.valid != 0U)
+                    {
+                        camera_set_status(state, CAMERA_TRIGGER_WAIT_REMOVE, "Recognized. Remove item");
+                    }
+                    else
+                    {
+                        camera_set_status(state, CAMERA_TRIGGER_WAIT_REMOVE, "Recognition failed. Remove item");
+                    }
                 }
             }
             else
@@ -679,12 +694,12 @@ void camera_workflow_process(camera_workflow_state_t *state)
                 state->stable_weight_gram = 0U;
                 state->flow_start_cycles = 0U;
                 state->pending_image_refresh = 0U;
-                camera_set_status(state, CAMERA_TRIGGER_EMPTY, "Please place an item");
+                camera_set_status(state, CAMERA_TRIGGER_EMPTY, "Place item");
             }
             break;
 
         default:
-            camera_set_status(state, CAMERA_TRIGGER_EMPTY, "Please place an item");
+            camera_set_status(state, CAMERA_TRIGGER_EMPTY, "Place item");
             break;
     }
 }
@@ -699,6 +714,48 @@ int camera_workflow_remove_product(camera_workflow_state_t *state, product_id_t 
     return cart_service_remove_item(&state->cart, product_id);
 }
 
+int camera_workflow_remove_selected_item(camera_workflow_state_t *state)
+{
+    uint32_t idx;
+
+    if (state == 0)
+    {
+        return -1;
+    }
+
+    if (state->cart.selected_item_index < 0)
+    {
+        return -1;
+    }
+
+    idx = (uint32_t)state->cart.selected_item_index;
+    if ((idx >= PRODUCT_ID_COUNT) || (state->cart.items[idx].line_valid == 0U))
+    {
+        state->cart.selected_item_index = -1;
+        return -1;
+    }
+
+    state->cart.selected_item_index = -1;
+    return cart_service_remove_item(&state->cart, state->cart.items[idx].product_id);
+}
+
+void camera_workflow_select_cart_item(camera_workflow_state_t *state, int32_t selected_item_index)
+{
+    if (state == 0)
+    {
+        return;
+    }
+
+    if ((selected_item_index < 0) || ((uint32_t)selected_item_index >= PRODUCT_ID_COUNT))
+    {
+        state->cart.selected_item_index = -1;
+    }
+    else
+    {
+        state->cart.selected_item_index = selected_item_index;
+    }
+}
+
 void camera_workflow_clear_cart(camera_workflow_state_t *state)
 {
     if (state == 0)
@@ -709,6 +766,32 @@ void camera_workflow_clear_cart(camera_workflow_state_t *state)
     cart_service_clear(&state->cart);
 }
 
+int camera_workflow_pop_notice(camera_workflow_state_t *state,
+                               camera_notice_type_t *out_type,
+                               char *out_text,
+                               uint32_t text_size)
+{
+    if ((state == 0) || (state->notice_pending == 0U))
+    {
+        return 0;
+    }
+
+    if (out_type != 0)
+    {
+        *out_type = state->notice_type;
+    }
+
+    if ((out_text != 0) && (text_size > 0U))
+    {
+        snprintf(out_text, text_size, "%s", state->notice_text);
+    }
+
+    state->notice_pending = 0U;
+    state->notice_type = CAMERA_NOTICE_NONE;
+    state->notice_text[0] = '\0';
+    return 1;
+}
+
 const cart_item_t *camera_workflow_get_cart_items(const camera_workflow_state_t *state, uint32_t *out_count)
 {
     if (state == 0)
@@ -717,4 +800,9 @@ const cart_item_t *camera_workflow_get_cart_items(const camera_workflow_state_t 
     }
 
     return cart_service_get_items(&state->cart, out_count);
+}
+
+const uint16_t *camera_workflow_get_frame_buffer(void)
+{
+    return (const uint16_t *)camera_date_buf;
 }

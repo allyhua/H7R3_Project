@@ -34,7 +34,7 @@ LR_IROM1 0x08000000 0x00010000 {
         norflash_w25q128_dual.o
         norflash_ex.o
     }
-    RW_IRAM1 0x24000000 0x00072000 {
+    RW_IRAM1 0x24000000 0x00080000 {
         .ANY (+RW +ZI)
     }
 }

@@ -8,6 +8,9 @@
 #include <stdio.h>
 #include "app_x-cube-ai.h"
 #include "app/camera_workflow.h"
+#include "lvgl.h"
+#include "ui/lvgl_port.h"
+#include "ui/ui_checkout_main.h"
 #include "network.h"
 #include "network_data.h"
 
@@ -118,12 +121,18 @@ int main(void)
         boot_error_halt();
     }
 
+    lv_init();
+    lvgl_port_init();
+    ui_checkout_main_init(&camera_state);
+
     printf("[BOOT] System ready: stable weight triggers one capture per load\r\n");
 
     while (1)
     {
         camera_workflow_process(&camera_state);
-        LED0_TOGGLE();
+        ui_checkout_main_refresh(&camera_state);
+        lv_tick_inc(10);
+        lv_timer_handler();
         delay_ms(10);
     }
 }
