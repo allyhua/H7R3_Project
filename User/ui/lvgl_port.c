@@ -4,7 +4,7 @@
 #include "./BSP/LCD/lcd.h"
 #include "./BSP/TOUCH/touch.h"
 
-#define LVGL_PORT_BUFFER_LINES  (8U)
+#define LVGL_PORT_BUFFER_LINES  (24U)
 
 static void lvgl_port_flush_cb(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color_t *color_p);
 static void lvgl_port_touch_read_cb(lv_indev_drv_t *indev_drv, lv_indev_data_t *data);

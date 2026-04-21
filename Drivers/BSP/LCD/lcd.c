@@ -647,19 +647,14 @@ void lcd_clear(uint16_t color)
  */
 void lcd_fill(uint16_t sx, uint16_t sy, uint16_t ex, uint16_t ey, uint32_t color)
 {
-    uint16_t i;
-    uint16_t j;
-    uint16_t xlen;
-    
-    xlen = ex - sx + 1;
-    for (i=sy; i<=ey; i++)
+    uint32_t total;
+
+    total = (uint32_t)(ex - sx + 1U) * (uint32_t)(ey - sy + 1U);
+    lcd_set_window(sx, sy, ex - sx + 1U, ey - sy + 1U);
+    lcd_write_ram_prepare();
+    while (total--)
     {
-        lcd_set_cursor(sx, i);      /* 设置光标位置 */
-        lcd_write_ram_prepare();    /* 开始写入GRAM */
-        for (j=0; j<xlen; j++)
-        {
-            LCD->LCD_RAM = color;
-        }
+        LCD->LCD_RAM = color;
     }
 }
 
@@ -675,21 +670,14 @@ void lcd_fill(uint16_t sx, uint16_t sy, uint16_t ex, uint16_t ey, uint32_t color
  */
 void lcd_color_fill(uint16_t sx, uint16_t sy, uint16_t ex, uint16_t ey, uint16_t *color)
 {
-    uint16_t height;
-    uint16_t width;
-    uint16_t i;
-    uint16_t j;
-    
-    width = ex - sx + 1;            /* 计算指定区域的宽度 */
-    height = ey - sy + 1;           /* 计算指定区域的高度 */
-    for (i=0; i<height; i++)
+    uint32_t total;
+
+    total = (uint32_t)(ex - sx + 1U) * (uint32_t)(ey - sy + 1U);
+    lcd_set_window(sx, sy, ex - sx + 1U, ey - sy + 1U);
+    lcd_write_ram_prepare();
+    while (total--)
     {
-        lcd_set_cursor(sx, sy + i); /* 设置光标位置 */
-        lcd_write_ram_prepare();    /* 开始写入GRAM */
-        for (j=0; j<width; j++)
-        {
-            LCD->LCD_RAM = color[i * width + j];
-        }
+        LCD->LCD_RAM = *color++;
     }
 }
 

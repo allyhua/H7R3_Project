@@ -96,10 +96,6 @@ static void ai_log_err(const ai_error err, const char *stage)
            (stage != NULL) ? stage : "unknown",
            err.type,
            err.code);
-
-    while (1)
-    {
-    }
 }
 
 static uint32_t ai_topk_count(void)

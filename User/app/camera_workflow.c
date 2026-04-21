@@ -16,7 +16,7 @@
 #define CAMERA_INIT_RETRY_DELAY_MS  (100U)
 #define CAMERA_EMPTY_THRESHOLD_G    (30U)
 #define CAMERA_STABLE_DELTA_G       (10U)
-#define CAMERA_STABLE_HOLD_MS       (100U)
+#define CAMERA_STABLE_HOLD_MS       (50U)
 #define CAMERA_WEIGHT_SAMPLE_MS     (100U)
 #define CAMERA_IMAGE_REFRESH_DELAY_MS (50U)
 #define HX711_MEDIAN_LEN            (5U)
@@ -448,7 +448,7 @@ int camera_workflow_init(camera_workflow_state_t *state)
            state->frame_width,
            state->frame_height,
            CAMERA_FRAME_BUFFER_ADDR);
-    camera_set_status(state, CAMERA_TRIGGER_EMPTY, "Place item");
+    camera_set_status(state, CAMERA_TRIGGER_EMPTY, "请放置商品");
 
     return 0;
 }
@@ -480,11 +480,21 @@ void camera_workflow_handle_capture(camera_workflow_state_t *state)
     {
         wait_stable_ms = perf_cycles_to_ms(total_start_cycles - state->flow_start_cycles);
     }
-    dcmipp_start();
+    printf("[FLOW] Capture start\r\n");
+    if (dcmipp_start() != 0)
+    {
+        state->last_result_valid = 0U;
+        state->recognition_time_valid = 0U;
+        camera_push_notice(state, CAMERA_NOTICE_RECOGNIZE_FAIL, "相机拍照超时，请重新放置");
+        camera_set_status(state, CAMERA_TRIGGER_WAIT_REMOVE, "识别失败，请取走重试");
+        return;
+    }
+    printf("[FLOW] Capture done\r\n");
     capture_end_cycles = perf_cycle_counter_get();
     state->capture_counter++;
     memset(&state->last_cart_add, 0, sizeof(state->last_cart_add));
 
+    printf("[FLOW] AI classify start\r\n");
     if (APP_AI_ClassifyRgb565Roi((const uint16_t *)camera_date_buf,
                                  state->frame_width,
                                  state->frame_height,
@@ -498,12 +508,13 @@ void camera_workflow_handle_capture(camera_workflow_state_t *state)
         state->last_result_valid = 1U;
         state->inference_counter++;
         classify_ok = 1U;
+        printf("[FLOW] AI classify done: top1=%s\r\n", ai_class_label_get(state->last_result.top1_index));
     }
     else
     {
         state->last_result_valid = 0U;
         state->recognition_time_valid = 0U;
-        camera_push_notice(state, CAMERA_NOTICE_RECOGNIZE_FAIL, "Recognition failed. Remove item and retry.");
+        camera_push_notice(state, CAMERA_NOTICE_RECOGNIZE_FAIL, "识别失败，请移走商品后重试");
     }
     infer_end_cycles = perf_cycle_counter_get();
 
@@ -536,14 +547,14 @@ void camera_workflow_handle_capture(camera_workflow_state_t *state)
                        ai_label_name,
                        (int)cart_status,
                        (unsigned long)state->stable_weight_gram);
-                camera_push_notice(state, CAMERA_NOTICE_RECOGNIZE_FAIL, "Weight mismatch. Please place item again.");
+                camera_push_notice(state, CAMERA_NOTICE_RECOGNIZE_FAIL, "商品重量异常，请重新放置");
             }
         }
         else
         {
             printf("[CART] Unknown AI label: %s\r\n", ai_label_name);
             cart_status = CART_ADD_ERR_UNKNOWN_PRODUCT;
-            camera_push_notice(state, CAMERA_NOTICE_RECOGNIZE_FAIL, "Unknown product. Please retry.");
+            camera_push_notice(state, CAMERA_NOTICE_RECOGNIZE_FAIL, "识别到未知商品，请重试");
         }
     }
 
@@ -632,20 +643,24 @@ void camera_workflow_process(camera_workflow_state_t *state)
                 state->recognition_time_valid = 0U;
                 state->total_flow_time_valid = 0U;
                 state->pending_image_refresh = 0U;
-                camera_set_status(state, CAMERA_TRIGGER_DETECT_PLACEMENT, "Item detected");
+                memset(&state->last_cart_add, 0, sizeof(state->last_cart_add));
+                state->last_result_valid = 0U;
+                state->recognition_time_valid = 0U;
+                state->total_flow_time_valid = 0U;
+                camera_set_status(state, CAMERA_TRIGGER_DETECT_PLACEMENT, "检测到物品");
             }
             break;
 
         case CAMERA_TRIGGER_DETECT_PLACEMENT:
             if (state->weight_gram <= CAMERA_EMPTY_THRESHOLD_G)
             {
-                camera_set_status(state, CAMERA_TRIGGER_EMPTY, "Place item");
+                camera_set_status(state, CAMERA_TRIGGER_EMPTY, "请放置商品");
             }
             else
             {
                 state->stable_start_tick_ms = now_tick_ms;
                 state->stable_weight_gram = state->weight_gram;
-                camera_set_status(state, CAMERA_TRIGGER_WAIT_STABLE, "Checking weight");
+                camera_set_status(state, CAMERA_TRIGGER_WAIT_STABLE, "等待重量稳定");
             }
             break;
 
@@ -653,22 +668,22 @@ void camera_workflow_process(camera_workflow_state_t *state)
             if (state->weight_gram <= CAMERA_EMPTY_THRESHOLD_G)
             {
                 printf("[FLOW] Item removed before stability\r\n");
-                camera_set_status(state, CAMERA_TRIGGER_EMPTY, "Place item");
+                camera_set_status(state, CAMERA_TRIGGER_EMPTY, "请放置商品");
             }
             else if (weight_delta <= CAMERA_STABLE_DELTA_G)
             {
                 state->stable_weight_gram = state->weight_gram;
                 if ((now_tick_ms - state->stable_start_tick_ms) >= CAMERA_STABLE_HOLD_MS)
                 {
-                    camera_set_status(state, CAMERA_TRIGGER_RECOGNIZING, "Weight stable, recognizing");
+                    camera_set_status(state, CAMERA_TRIGGER_RECOGNIZING, "重量稳定，识别中");
                     camera_workflow_handle_capture(state);
                     if (state->last_cart_add.valid != 0U)
                     {
-                        camera_set_status(state, CAMERA_TRIGGER_WAIT_REMOVE, "Recognized. Remove item");
+                        camera_set_status(state, CAMERA_TRIGGER_WAIT_REMOVE, "识别成功，请取走商品");
                     }
                     else
                     {
-                        camera_set_status(state, CAMERA_TRIGGER_WAIT_REMOVE, "Recognition failed. Remove item");
+                        camera_set_status(state, CAMERA_TRIGGER_WAIT_REMOVE, "识别失败，请取走重试");
                     }
                 }
             }
@@ -694,12 +709,16 @@ void camera_workflow_process(camera_workflow_state_t *state)
                 state->stable_weight_gram = 0U;
                 state->flow_start_cycles = 0U;
                 state->pending_image_refresh = 0U;
-                camera_set_status(state, CAMERA_TRIGGER_EMPTY, "Place item");
+                memset(&state->last_cart_add, 0, sizeof(state->last_cart_add));
+                state->last_result_valid = 0U;
+                state->recognition_time_valid = 0U;
+                state->total_flow_time_valid = 0U;
+                camera_set_status(state, CAMERA_TRIGGER_EMPTY, "请放置商品");
             }
             break;
 
         default:
-            camera_set_status(state, CAMERA_TRIGGER_EMPTY, "Place item");
+            camera_set_status(state, CAMERA_TRIGGER_EMPTY, "请放置商品");
             break;
     }
 }
@@ -750,6 +769,14 @@ void camera_workflow_select_cart_item(camera_workflow_state_t *state, int32_t se
     {
         state->cart.selected_item_index = -1;
     }
+    else if (state->cart.items[selected_item_index].line_valid == 0U)
+    {
+        state->cart.selected_item_index = -1;
+    }
+    else if (state->cart.selected_item_index == selected_item_index)
+    {
+        state->cart.selected_item_index = -1;
+    }
     else
     {
         state->cart.selected_item_index = selected_item_index;
@@ -764,6 +791,46 @@ void camera_workflow_clear_cart(camera_workflow_state_t *state)
     }
 
     cart_service_clear(&state->cart);
+}
+
+void camera_workflow_continue_shopping(camera_workflow_state_t *state)
+{
+    if (state == 0)
+    {
+        return;
+    }
+
+    state->cart.selected_item_index = -1;
+    memset(&state->last_cart_add, 0, sizeof(state->last_cart_add));
+    state->last_result_valid = 0U;
+    state->recognition_time_valid = 0U;
+    state->total_flow_time_valid = 0U;
+    state->notice_pending = 0U;
+    state->notice_type = CAMERA_NOTICE_NONE;
+    state->notice_text[0] = '\0';
+
+    if (state->weight_gram <= CAMERA_EMPTY_THRESHOLD_G)
+    {
+        state->stable_weight_gram = 0U;
+        state->flow_start_cycles = 0U;
+        state->pending_image_refresh = 0U;
+        camera_set_status(state, CAMERA_TRIGGER_EMPTY, "请放置商品");
+    }
+    else
+    {
+        camera_set_status(state, CAMERA_TRIGGER_WAIT_REMOVE, "请取走商品后继续");
+    }
+}
+
+void camera_workflow_complete_checkout(camera_workflow_state_t *state)
+{
+    if (state == 0)
+    {
+        return;
+    }
+
+    cart_service_clear(&state->cart);
+    camera_workflow_continue_shopping(state);
 }
 
 int camera_workflow_pop_notice(camera_workflow_state_t *state,

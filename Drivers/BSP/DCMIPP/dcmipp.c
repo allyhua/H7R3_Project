@@ -6,6 +6,9 @@
  */
 
 #include "./BSP/DCMIPP/dcmipp.h"
+#include <stdio.h>
+
+extern int printf(const char *format, ...);
 
 extern volatile uint8_t g_ov_frame;
 
@@ -13,6 +16,7 @@ DCMIPP_HandleTypeDef        g_dcmipp_handle = {0};
 DCMIPP_PipeConfTypeDef      g_dcmipp_pipecfg = {0};
 DCMIPP_ParallelConfTypeDef  g_dcmipp_parallelcfg = {0};
 static volatile uint8_t g_dcmipp_frame_done = 0U;
+#define DCMIPP_SNAPSHOT_TIMEOUT_MS  (1000U)
 
 __ALIGNED(16) uint32_t camera_date_buf[1024 * 1024 * 2 / 4] __attribute__((section(".bss.ARM.__at_0x701F4000")));
 
@@ -89,18 +93,27 @@ void HAL_DCMIPP_MspInit(DCMIPP_HandleTypeDef *phdcmipp)
     }
 }
 
-void dcmipp_start(void)
+int dcmipp_start(void)
 {
+    const uint32_t start_tick = HAL_GetTick();
+
     g_dcmipp_frame_done = 0U;
     SCB_CleanInvalidateDCache();
     HAL_DCMIPP_PIPE_Start(&g_dcmipp_handle, DCMIPP_PIPE0, (uint32_t)camera_date_buf, DCMIPP_MODE_SNAPSHOT);
 
     while (g_dcmipp_frame_done == 0U)
     {
+        if ((HAL_GetTick() - start_tick) > DCMIPP_SNAPSHOT_TIMEOUT_MS)
+        {
+            HAL_DCMIPP_PIPE_Stop(&g_dcmipp_handle, DCMIPP_PIPE0);
+            printf("[CAM] Snapshot timeout waiting for DCMIPP frame event\r\n");
+            return -1;
+        }
     }
 
     HAL_DCMIPP_PIPE_Stop(&g_dcmipp_handle, DCMIPP_PIPE0);
     SCB_InvalidateDCache();
+    return 0;
 }
 
 void dcmipp_stop(void)

@@ -371,7 +371,7 @@
 #define LV_FONT_MONTSERRAT_12_SUBPX         0
 #define LV_FONT_MONTSERRAT_28_COMPRESSED    0  /* bpp = 3 */
 #define LV_FONT_DEJAVU_16_PERSIAN_HEBREW    0  /* 希伯来语，阿拉伯语，波斯语以及它们的各种形式 */
-#define LV_FONT_SIMSUN_16_CJK               0  /* 1000个最常见的CJK自由基s */
+#define LV_FONT_SIMSUN_16_CJK               1  /* 1000 most common CJK radicals */
 
 /* 像素完美的单空间字体 */
 #define LV_FONT_UNSCII_8                    0
@@ -712,6 +712,7 @@
 #endif /*LV_CONF_H*/
 
 #endif /*End of "Content enable"*/
+
 
 
 

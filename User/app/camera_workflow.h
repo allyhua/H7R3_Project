@@ -66,6 +66,8 @@ int camera_workflow_remove_product(camera_workflow_state_t *state, product_id_t 
 int camera_workflow_remove_selected_item(camera_workflow_state_t *state);
 void camera_workflow_select_cart_item(camera_workflow_state_t *state, int32_t selected_item_index);
 void camera_workflow_clear_cart(camera_workflow_state_t *state);
+void camera_workflow_continue_shopping(camera_workflow_state_t *state);
+void camera_workflow_complete_checkout(camera_workflow_state_t *state);
 int camera_workflow_pop_notice(camera_workflow_state_t *state,
                                camera_notice_type_t *out_type,
                                char *out_text,
