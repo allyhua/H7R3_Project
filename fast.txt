@@ -1,0 +1,492 @@
+STM32 / Keil 工程 full + fast 快速下板方案说明
+
+本文档说明当前工程中 `atk_h7r3_full_camrun` 和
+`atk_h7r3_full_camrun_fast` 的分离方案。目标是：AI 权重很大时，只在
+模型变化时全量烧录一次；普通业务代码、UI、扫码逻辑迭代时，用 fast
+工程快速下载，避免每次重复写入大权重。
+
+
+1. 核心思想
+
+本方案把固件分成两类构建目标：
+
+- full 工程：
+  - 携带完整 AI 权重二进制。
+  - 负责把 `network_data.bin` 烧到外部 Flash 的固定地址。
+  - 本工程目标名：`atk_h7r3_full_camrun`。
+
+- fast 工程：
+  - 不携带完整 AI 权重。
+  - 假设外部 Flash 里已经有 full 工程烧进去的正确权重。
+  - 只下载普通程序代码和资源，因此下载速度更快。
+  - 本工程目标名：`atk_h7r3_full_camrun_fast`。
+
+运行时，两者使用同一份应用逻辑：启动后从外部 Flash 读取权重，复制到
+运行 RAM，再把 RAM 地址交给 X-CUBE-AI。
+
+
+2. 当前工程的地址布局
+
+当前工程使用的关键地址：
+
+```text
+内部 Flash 启动区:      0x08000000
+外部 Flash 权重区:      0x90000000
+外部 Flash 普通 RO 区:  0x90A00000
+运行时权重 RAM 地址:    0x70400000
+```
+
+当前 AI 权重大小：
+
+```text
+2274644 bytes
+```
+
+当前 `User/network_data.c` 中的运行时定义：
+
+```c
+#define AI_NETWORK_DATA_WEIGHTS_ADDR_DST     (0x70400000)
+#define AI_NETWORK_DATA_WEIGHTS_ADDR_SRC     (0x90000000)
+
+static void s_network_copy_weights(void)
+{
+  memcpy((void *)AI_NETWORK_DATA_WEIGHTS_ADDR_DST,
+         (const void*)AI_NETWORK_DATA_WEIGHTS_ADDR_SRC,
+         2274644);
+}
+```
+
+含义：
+
+- `0x90000000` 是外部 Flash 中保存权重的位置。
+- `0x70400000` 是运行时权重复制到 RAM 后的位置。
+- X-CUBE-AI 最终绑定的是 `0x70400000`。
+
+
+3. full 工程如何携带权重
+
+full 工程使用文件：
+
+```text
+User/network_weights_bin.s
+```
+
+内容：
+
+```asm
+        AREA    network_weights_section, DATA, READONLY, ALIGN=2
+
+        INCBIN  ..\network_data.bin
+
+        END
+```
+
+关键点：
+
+- `INCBIN ..\network_data.bin` 会把大权重文件直接打进目标文件。
+- 该目标文件生成的 section 名为 `network_weights_section`。
+- scatter 文件把这个 section 放到外部 Flash 的 `0x90000000`。
+
+full scatter 文件：
+
+```text
+User/Script/ATK-DNH7R3_flash_ROMxspi1_camrun.sct
+```
+
+关键段：
+
+```text
+LR_WEIGHTS 0x90000000 0x00300000 {
+    ER_WEIGHTS 0x90000000 0x00300000 {
+        network_weights_bin.o (network_weights_section)
+    }
+}
+```
+
+含义：
+
+- 链接器会把 `network_weights_bin.o` 中的 `network_weights_section`
+  放到加载区 `0x90000000`。
+- Keil 下载 full 工程时，会把这段权重写入外部 Flash。
+
+full 工程还在 linker misc 中保留权重段：
+
+```text
+--keep network_weights_bin.o(network_weights_section)
+```
+
+这样可以避免链接器认为该 section 没有被 C 代码引用而丢弃。
+
+
+4. fast 工程如何跳过权重
+
+fast 工程使用文件：
+
+```text
+User/network_weights_bin_fast.s
+```
+
+内容：
+
+```asm
+        AREA    network_weights_section, DATA, READONLY, ALIGN=2
+
+        END
+```
+
+关键点：
+
+- 它声明了同名 section，但没有 `INCBIN`。
+- 因此不会把 `network_data.bin` 这个大文件打进 fast 固件。
+- fast 工程编译/下载体积明显变小。
+
+fast scatter 文件：
+
+```text
+User/Script/ATK-DNH7R3_flash_ROMxspi1_camrun_fast.sct
+```
+
+它没有 `LR_WEIGHTS 0x90000000` 段，只保留普通程序区：
+
+```text
+LR_ROM1 0x90A00000 0x01600000 {
+    ER_ROM1 0x90A00000 0x01600000 {
+        .ANY (+RO)
+    }
+}
+```
+
+含义：
+
+- fast 工程不会写 `0x90000000` 权重区。
+- 外部 Flash 中原有的权重会被保留。
+- 普通固件代码仍可以更新。
+
+
+5. Keil 工程差异
+
+full 工程：
+
+```text
+Projects/MDK-ARM/atk_h7r3_full_camrun.uvprojx
+TargetName: atk_h7r3_full_camrun
+OutputName: atk_h7r3_full_camrun
+ScatterFile: ..\..\User\Script\ATK-DNH7R3_flash_ROMxspi1_camrun.sct
+权重文件: ..\..\User\network_weights_bin.s
+Linker Misc: --diag_suppress L6314,L6329 --keep network_weights_bin.o(network_weights_section)
+```
+
+fast 工程：
+
+```text
+Projects/MDK-ARM/atk_h7r3_full_camrun_fast.uvprojx
+TargetName: atk_h7r3_full_camrun_fast
+OutputName: atk_h7r3_full_camrun_fast
+ScatterFile: ..\..\User\Script\ATK-DNH7R3_flash_ROMxspi1_camrun_fast.sct
+权重文件: ..\..\User\network_weights_bin_fast.s
+Linker Misc: --diag_suppress L6314,L6329
+```
+
+复刻时最重要的区别就是：
+
+- full 工程引用真实 `network_weights_bin.s`。
+- fast 工程引用空 stub `network_weights_bin_fast.s`。
+- full scatter 有权重加载区。
+- fast scatter 没有权重加载区。
+
+
+6. 启动时必须做的事情
+
+启动流程必须保证：
+
+1. 初始化外部 Flash / XIP 映射，使 `0x90000000` 可读。
+2. 如果需要把权重搬到 RAM，先初始化目标 RAM，例如 HyperRAM。
+3. 初始化 X-CUBE-AI 前，`network_data.c` 能从 `0x90000000` 正确读权重。
+4. `ai_network_data_params_get()` 或 `ai_network_data_weights_get()` 会调用
+   `s_network_copy_weights()`，把权重复制到 `0x70400000`。
+5. AI 网络绑定的权重地址必须是 RAM 地址 `0x70400000`。
+
+当前工程启动日志中有类似信息：
+
+```text
+[BOOT] Initializing HyperRAM for copied weights and camera frame buffer...
+[BOOT] HyperRAM init ok
+[BOOT] Initializing NOR Flash for AI weights...
+[BOOT] NOR Flash init ok
+[BOOT] Runtime weights @ 0x70400000 (2274644 bytes)
+[BOOT] Weight copy-to-RAM is enabled
+[BOOT] NOR[0x00000000..0x0000000F] = ...
+[BOOT] MEM[0x70400000..0x7040000F] = ...
+```
+
+这类日志很有用，建议复刻工程也保留：
+
+- 读外部 Flash 权重区前 16 字节。
+- 读复制到 RAM 后的前 16 字节。
+- 对比两者是否一致。
+- 打印 runtime weights 地址和大小。
+
+
+7. 复刻到另一个工程的步骤
+
+步骤 1：确认模型权重文件
+
+准备好模型权重二进制，例如：
+
+```text
+network_data.bin
+```
+
+确认它的大小，并记录到 `network_data.c` 的 copy 长度中。
+
+当前工程是：
+
+```text
+2274644 bytes
+```
+
+步骤 2：创建 full 权重汇编文件
+
+例如：
+
+```text
+User/network_weights_bin.s
+```
+
+内容：
+
+```asm
+        AREA    network_weights_section, DATA, READONLY, ALIGN=2
+
+        INCBIN  ..\network_data.bin
+
+        END
+```
+
+路径 `..\network_data.bin` 要根据实际工程目录调整。
+
+步骤 3：创建 fast stub 汇编文件
+
+例如：
+
+```text
+User/network_weights_bin_fast.s
+```
+
+内容：
+
+```asm
+        AREA    network_weights_section, DATA, READONLY, ALIGN=2
+
+        END
+```
+
+步骤 4：创建 full scatter
+
+在 full scatter 中加入权重区：
+
+```text
+LR_WEIGHTS 0x90000000 0x00300000 {
+    ER_WEIGHTS 0x90000000 0x00300000 {
+        network_weights_bin.o (network_weights_section)
+    }
+}
+```
+
+注意：
+
+- `0x90000000` 要换成目标板外部 Flash 的实际 XIP 映射地址。
+- `0x00300000` 要大于权重文件大小，并按 Flash 擦除/下载算法要求对齐。
+- 普通 RO 代码最好避开权重区，例如从 `0x90A00000` 开始。
+
+步骤 5：创建 fast scatter
+
+fast scatter 中不要包含 `LR_WEIGHTS`。
+
+只保留启动区、RAM 区和普通 RO 区，例如：
+
+```text
+LR_ROM1 0x90A00000 0x01600000 {
+    ER_ROM1 0x90A00000 0x01600000 {
+        .ANY (+RO)
+    }
+}
+```
+
+这样 fast 下载时不会覆盖 `0x90000000` 权重区。
+
+步骤 6：复制 Keil target
+
+在 Keil 中复制一份 full target，改成 fast target：
+
+- 改 target 名称。
+- 改 output 名称。
+- 改 scatter 文件为 fast scatter。
+- 把 `network_weights_bin.s` 替换为 `network_weights_bin_fast.s`。
+- full target 保留 `--keep network_weights_bin.o(network_weights_section)`。
+- fast target 不需要 keep 真实权重段。
+
+步骤 7：修改 `network_data.c`
+
+确认权重源地址、目标地址和长度：
+
+```c
+#define AI_NETWORK_DATA_WEIGHTS_ADDR_DST     (0x70400000)
+#define AI_NETWORK_DATA_WEIGHTS_ADDR_SRC     (0x90000000)
+
+AI_STATIC void s_network_copy_weights(void)
+{
+  memcpy((void *)AI_NETWORK_DATA_WEIGHTS_ADDR_DST,
+         (const void*)AI_NETWORK_DATA_WEIGHTS_ADDR_SRC,
+         WEIGHTS_SIZE_BYTES);
+}
+```
+
+再确认 X-CUBE-AI 的 weights map 指向 `ADDR_DST`：
+
+```c
+AI_BUFFER_INIT(..., WEIGHTS_SIZE_BYTES, NULL, AI_NETWORK_DATA_WEIGHTS_ADDR_DST)
+```
+
+步骤 8：启动时初始化外部存储
+
+在调用 AI 初始化前完成：
+
+- HyperRAM 初始化。
+- NOR Flash / XSPI 初始化。
+- 外部 Flash memory-mapped 或 XIP 读访问准备。
+- 必要的 MPU/cache 配置。
+
+如果 `memcpy(0x70400000, 0x90000000, size)` 前外部 Flash 还不可读，
+AI 初始化会失败，或者权重内容全错。
+
+
+8. 使用规则
+
+使用 full 的情况：
+
+- 第一次给板子烧这个工程。
+- 换了模型。
+- 换了 `network_data.bin`。
+- 修改了权重布局或权重地址。
+- 怀疑外部 Flash 权重损坏。
+- fast 工程下载后 AI 识别结果明显异常。
+
+使用 fast 的情况：
+
+- 只改 UI。
+- 只改业务逻辑。
+- 只改扫码支付逻辑。
+- 只改称重、串口、LCD 页面。
+- 没有修改 AI 模型和权重文件。
+
+推荐流程：
+
+```text
+1. 模型或权重变化：先烧 full。
+2. 确认 full 启动和 AI 识别正常。
+3. 后续普通固件迭代：烧 fast。
+4. 如果 fast 后 AI 异常：重新烧 full 验证权重区。
+```
+
+
+9. 当前工程的构建命令
+
+full：
+
+```text
+F:\Keil5\UV4\UV4.exe -j0 -b Projects\MDK-ARM\atk_h7r3_full_camrun.uvprojx -t atk_h7r3_full_camrun
+```
+
+fast：
+
+```text
+F:\Keil5\UV4\UV4.exe -j0 -b Projects\MDK-ARM\atk_h7r3_full_camrun_fast.uvprojx -t atk_h7r3_full_camrun_fast
+```
+
+
+10. 常见问题和排查
+
+问题 1：fast 下载后 AI 识别失败
+
+优先检查：
+
+- 板子是否已经烧过 full。
+- full 使用的 `network_data.bin` 是否是当前模型对应版本。
+- 外部 Flash `0x90000000` 是否能读到非全 FF / 非全 00 数据。
+- 启动日志中 NOR 前 16 字节和 RAM 前 16 字节是否一致。
+
+问题 2：full 可以，fast 不行
+
+常见原因：
+
+- fast scatter 仍然擦写了权重区。
+- fast 工程误用了真实权重汇编文件或文件配置混乱。
+- 下载算法设置会整片擦除外部 Flash，导致权重区被擦掉。
+- full 和 fast 使用了不同的 `network_data.c` 或不同的权重大小。
+
+问题 3：链接时权重 section 被移除
+
+full 工程 linker misc 需要保留：
+
+```text
+--keep network_weights_bin.o(network_weights_section)
+```
+
+问题 4：启动后复制权重 HardFault
+
+检查：
+
+- `0x90000000` 外部 Flash 是否已经初始化并可读。
+- `0x70400000` 目标 RAM 是否已经初始化并可写。
+- MPU/cache 是否允许访问这些区域。
+- copy 长度是否超过源/目标区域容量。
+
+问题 5：换模型后忘记烧 full
+
+表现：
+
+- 程序版本是新的，但 AI 权重还是旧的。
+- 识别类别、置信度或输出明显不符合新模型。
+
+处理：
+
+```text
+先烧 full，再烧 fast。
+```
+
+
+11. 复刻检查清单
+
+移植到新工程后逐项确认：
+
+- [ ] 有真实权重汇编文件，且包含 `INCBIN network_data.bin`。
+- [ ] 有 fast stub 汇编文件，且不包含 `INCBIN`。
+- [ ] full 工程引用真实权重汇编文件。
+- [ ] fast 工程引用 stub 权重汇编文件。
+- [ ] full scatter 有 `LR_WEIGHTS`，地址指向外部 Flash 权重区。
+- [ ] fast scatter 没有 `LR_WEIGHTS`。
+- [ ] 普通 RO 区不会覆盖权重区。
+- [ ] `network_data.c` 的源地址指向外部 Flash 权重区。
+- [ ] `network_data.c` 的目标地址指向可写运行 RAM。
+- [ ] copy 长度等于当前权重大小。
+- [ ] AI 初始化前已完成外部 Flash 和运行 RAM 初始化。
+- [ ] 启动日志能打印并对比 Flash/RAM 权重前几个字节。
+- [ ] 第一次烧录或换模型后先烧 full。
+- [ ] 普通迭代时再烧 fast。
+
+
+12. 本方案的边界
+
+这个方案只解决“避免重复下载大权重”的问题。
+
+它不自动解决：
+
+- 外部 Flash 下载算法配置错误。
+- 启动时外部 Flash 没有初始化。
+- 权重文件和 X-CUBE-AI 生成代码不匹配。
+- MPU/cache 属性错误。
+- fast 下载流程整片擦除了外部 Flash。
+
+因此复刻时最重要的是：保证 full 真的把权重写入固定地址，fast 真的不碰
+这个地址，运行时代码始终从同一个固定地址读取权重。

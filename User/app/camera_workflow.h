@@ -46,6 +46,7 @@ typedef struct
     uint32_t stable_weight_gram;
     uint32_t last_sample_weight_gram;
     uint32_t stable_start_tick_ms;
+    uint8_t stable_sample_count;
     uint32_t last_weight_sample_tick_ms;
     uint32_t flow_start_cycles;
     uint32_t pending_image_refresh_tick_ms;

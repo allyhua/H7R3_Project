@@ -6,6 +6,7 @@ extern "C" {
 #endif
 
 void lvgl_port_init(void);
+void lvgl_port_gpdma_irqhandler(void);
 
 #ifdef __cplusplus
 }

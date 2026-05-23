@@ -15,11 +15,14 @@
 #define CAMERA_AI_ROI_MIN_SIZE      (96U)
 #define CAMERA_INIT_RETRY_DELAY_MS  (100U)
 #define CAMERA_EMPTY_THRESHOLD_G    (30U)
-#define CAMERA_STABLE_DELTA_G       (10U)
-#define CAMERA_STABLE_HOLD_MS       (50U)
-#define CAMERA_WEIGHT_SAMPLE_MS     (100U)
+#define CAMERA_STABLE_DELTA_G       (30U)
+#define CAMERA_STABLE_HOLD_MS       (300U)
+#define CAMERA_FAST_STABLE_MIN_MS   (180U)
+#define CAMERA_FAST_STABLE_COUNT    (2U)
+#define CAMERA_UNSTABLE_RESET_G     (60U)
+#define CAMERA_WEIGHT_SAMPLE_MS     (60U)
 #define CAMERA_IMAGE_REFRESH_DELAY_MS (50U)
-#define HX711_MEDIAN_LEN            (5U)
+#define HX711_MEDIAN_LEN            (3U)
 #define HX711_MEDIAN_INDEX          (HX711_MEDIAN_LEN / 2U)
 #define HX711_SCALE_FACTOR          (51000U)
 #define CAMERA_FRAME_BUFFER_ADDR    (0x701F4000UL)
@@ -397,6 +400,7 @@ int camera_workflow_init(camera_workflow_state_t *state)
     state->stable_weight_gram = 0U;
     state->last_sample_weight_gram = 0U;
     state->stable_start_tick_ms = 0U;
+    state->stable_sample_count = 0U;
     state->last_weight_sample_tick_ms = 0U;
     state->flow_start_cycles = 0U;
     state->pending_image_refresh_tick_ms = 0U;
@@ -424,6 +428,7 @@ int camera_workflow_init(camera_workflow_state_t *state)
     }
 
     ov2640_rgb565_mode();
+    ov2640_hmirror(0U);
     ov2640_focus_init();
     ov2640_light_mode(1U);
     ov2640_color_saturation(2U);
@@ -643,6 +648,7 @@ void camera_workflow_process(camera_workflow_state_t *state)
                 state->recognition_time_valid = 0U;
                 state->total_flow_time_valid = 0U;
                 state->pending_image_refresh = 0U;
+                state->stable_sample_count = 0U;
                 memset(&state->last_cart_add, 0, sizeof(state->last_cart_add));
                 state->last_result_valid = 0U;
                 state->recognition_time_valid = 0U;
@@ -660,6 +666,7 @@ void camera_workflow_process(camera_workflow_state_t *state)
             {
                 state->stable_start_tick_ms = now_tick_ms;
                 state->stable_weight_gram = state->weight_gram;
+                state->stable_sample_count = 0U;
                 camera_set_status(state, CAMERA_TRIGGER_WAIT_STABLE, "等待重量稳定");
             }
             break;
@@ -668,12 +675,23 @@ void camera_workflow_process(camera_workflow_state_t *state)
             if (state->weight_gram <= CAMERA_EMPTY_THRESHOLD_G)
             {
                 printf("[FLOW] Item removed before stability\r\n");
+                state->stable_sample_count = 0U;
                 camera_set_status(state, CAMERA_TRIGGER_EMPTY, "请放置商品");
             }
             else if (weight_delta <= CAMERA_STABLE_DELTA_G)
             {
+                uint32_t stable_elapsed_ms;
+
                 state->stable_weight_gram = state->weight_gram;
-                if ((now_tick_ms - state->stable_start_tick_ms) >= CAMERA_STABLE_HOLD_MS)
+                if (state->stable_sample_count < 0xFFU)
+                {
+                    state->stable_sample_count++;
+                }
+
+                stable_elapsed_ms = now_tick_ms - state->stable_start_tick_ms;
+                if ((stable_elapsed_ms >= CAMERA_STABLE_HOLD_MS) ||
+                    ((stable_elapsed_ms >= CAMERA_FAST_STABLE_MIN_MS) &&
+                     (state->stable_sample_count >= CAMERA_FAST_STABLE_COUNT)))
                 {
                     camera_set_status(state, CAMERA_TRIGGER_RECOGNIZING, "重量稳定，识别中");
                     camera_workflow_handle_capture(state);
@@ -689,8 +707,12 @@ void camera_workflow_process(camera_workflow_state_t *state)
             }
             else
             {
-                state->stable_start_tick_ms = now_tick_ms;
+                if (weight_delta > CAMERA_UNSTABLE_RESET_G)
+                {
+                    state->stable_start_tick_ms = now_tick_ms;
+                }
                 state->stable_weight_gram = state->weight_gram;
+                state->stable_sample_count = 0U;
                 printf("[FLOW] Weight unstable: current=%lu g delta=%lu g\r\n",
                        (unsigned long)state->weight_gram,
                        (unsigned long)weight_delta);
@@ -707,6 +729,7 @@ void camera_workflow_process(camera_workflow_state_t *state)
             {
                 printf("[FLOW] Item removed, next round enabled\r\n");
                 state->stable_weight_gram = 0U;
+                state->stable_sample_count = 0U;
                 state->flow_start_cycles = 0U;
                 state->pending_image_refresh = 0U;
                 memset(&state->last_cart_add, 0, sizeof(state->last_cart_add));
@@ -812,6 +835,7 @@ void camera_workflow_continue_shopping(camera_workflow_state_t *state)
     if (state->weight_gram <= CAMERA_EMPTY_THRESHOLD_G)
     {
         state->stable_weight_gram = 0U;
+        state->stable_sample_count = 0U;
         state->flow_start_cycles = 0U;
         state->pending_image_refresh = 0U;
         camera_set_status(state, CAMERA_TRIGGER_EMPTY, "请放置商品");

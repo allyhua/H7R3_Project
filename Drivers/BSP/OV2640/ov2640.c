@@ -430,6 +430,26 @@ void ov2640_test_pattern(uint8_t mode)
     ov2640_write_reg(ATK_MC2640_REG_SENSOR_COM7, com7);
 }
 
+void ov2640_hmirror(uint8_t enable)
+{
+    uint8_t reg04;
+
+    mc2640_select_bank(1U);
+    reg04 = ov2640_read_reg(ATK_MC2640_REG_SENSOR_REG04);
+    if (enable != 0U)
+    {
+        reg04 |= 0x80U;
+    }
+    else
+    {
+        reg04 &= (uint8_t)~0x80U;
+    }
+    ov2640_write_reg(ATK_MC2640_REG_SENSOR_REG04, reg04);
+    printf("[CAM] OV2640 horizontal mirror %s, REG04=0x%02X\r\n",
+           (enable != 0U) ? "on" : "off",
+           reg04);
+}
+
 uint8_t ov2640_outsize_set(uint16_t offx, uint16_t offy, uint16_t width, uint16_t height)
 {
     (void)offx;

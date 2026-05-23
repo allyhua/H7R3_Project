@@ -60,6 +60,7 @@ void ov2640_contrast(uint8_t level);                                            
 void ov2640_sharpness(uint8_t level);                                                           /* 设置OV2640锐度 */
 void ov2640_special_effects(uint8_t effects);                                                   /* 设置OV2640特效 */
 void ov2640_test_pattern(uint8_t mode);                                                         /* OV2640测试 */
+void ov2640_hmirror(uint8_t enable);                                                            /* OV2640 horizontal mirror */
 uint8_t ov2640_outsize_set(uint16_t offx, uint16_t offy, uint16_t width, uint16_t height);      /* 设置OV2640输出图像大小 */
 uint8_t ov2640_image_window_set(uint16_t offx, uint16_t offy, uint16_t width, uint16_t height); /* 设置OV2640图像开窗大小 */
 uint8_t ov2640_focus_init(void);                                                                /* 初始化OV2640自动对焦 */

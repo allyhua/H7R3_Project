@@ -7,7 +7,7 @@
 
   <Targets>
     <Target>
-      <TargetName>atk_h7r3_full</TargetName>
+      <TargetName>atk_h7r3_full_camrun_fast</TargetName>
       <ToolsetNumber>0x4</ToolsetNumber>
       <ToolsetName>ARM-ADS</ToolsetName>
       <pCCUsed>6220000::V6.22::ARMCLANG</pCCUsed>
@@ -19,29 +19,29 @@
           <PackID>Keil.STM32H7RSxx_DFP.1.0.0</PackID>
           <PackURL>https://www.keil.com/pack/</PackURL>
           <Cpu>IRAM(0x20000000,0x20000) IROM(0x08000000,0x010000) CPUTYPE("Cortex-M7") FPU3(DFPU) CLOCK(12000000) ELITTLE</Cpu>
-          <FlashUtilSpec>
-          </FlashUtilSpec><StartupFile>
-          </StartupFile><FlashDriverDll>UL2CM3(-S0 -C0 -P0 -FD20000000 -FC10000 -FN1 -FF0STM32H7Rx_64k -FS08000000 -FL010000 -FP0($$Device:STM32H7R3L8HxH$CMSIS\Flash\STM32H7Rx_64k.FLM))</FlashDriverDll>
+          <FlashUtilSpec></FlashUtilSpec>
+          <StartupFile></StartupFile>
+          <FlashDriverDll>UL2CM3(-S0 -C0 -P0 -FD20000000 -FC10000 -FN1 -FF0STM32H7Rx_64k -FS08000000 -FL010000 -FP0($$Device:STM32H7R3L8HxH$CMSIS\Flash\STM32H7Rx_64k.FLM))</FlashDriverDll>
           <DeviceId>0</DeviceId>
-          <RegisterFile>
-          </RegisterFile><MemoryEnv>
-          </MemoryEnv><Cmp>
-          </Cmp><Asm>
-          </Asm><Linker>
-          </Linker><OHString>
-          </OHString><InfinionOptionDll>
-          </InfinionOptionDll><SLE66CMisc>
-          </SLE66CMisc><SLE66AMisc>
-          </SLE66AMisc><SLE66LinkerMisc>
-          </SLE66LinkerMisc><SFDFile>$$Device:STM32H7R3L8HxH$CMSIS\SVD\STM32H7R.svd</SFDFile>
+          <RegisterFile></RegisterFile>
+          <MemoryEnv></MemoryEnv>
+          <Cmp></Cmp>
+          <Asm></Asm>
+          <Linker></Linker>
+          <OHString></OHString>
+          <InfinionOptionDll></InfinionOptionDll>
+          <SLE66CMisc></SLE66CMisc>
+          <SLE66AMisc></SLE66AMisc>
+          <SLE66LinkerMisc></SLE66LinkerMisc>
+          <SFDFile>$$Device:STM32H7R3L8HxH$CMSIS\SVD\STM32H7R.svd</SFDFile>
           <bCustSvd>0</bCustSvd>
           <UseEnv>0</UseEnv>
-          <BinPath>
-          </BinPath><IncludePath>
-          </IncludePath><LibPath>
-          </LibPath><RegisterFilePath>
-          </RegisterFilePath><DBRegisterFilePath>
-          </DBRegisterFilePath><TargetStatus>
+          <BinPath></BinPath>
+          <IncludePath></IncludePath>
+          <LibPath></LibPath>
+          <RegisterFilePath></RegisterFilePath>
+          <DBRegisterFilePath></DBRegisterFilePath>
+          <TargetStatus>
             <Error>0</Error>
             <ExitCodeStop>0</ExitCodeStop>
             <ButtonStop>0</ButtonStop>
@@ -49,7 +49,7 @@
             <InvalidFlash>1</InvalidFlash>
           </TargetStatus>
           <OutputDirectory>..\..\Output\</OutputDirectory>
-          <OutputName>atk_h7r3_full</OutputName>
+          <OutputName>atk_h7r3_full_camrun_fast</OutputName>
           <CreateExecutable>1</CreateExecutable>
           <CreateLib>0</CreateLib>
           <CreateHexFile>1</CreateHexFile>
@@ -62,9 +62,9 @@
           <BeforeCompile>
             <RunUserProg1>0</RunUserProg1>
             <RunUserProg2>0</RunUserProg2>
-            <UserProg1Name>
-            </UserProg1Name><UserProg2Name>
-            </UserProg2Name><UserProg1Dos16Mode>0</UserProg1Dos16Mode>
+            <UserProg1Name></UserProg1Name>
+            <UserProg2Name></UserProg2Name>
+            <UserProg1Dos16Mode>0</UserProg1Dos16Mode>
             <UserProg2Dos16Mode>0</UserProg2Dos16Mode>
             <nStopU1X>0</nStopU1X>
             <nStopU2X>0</nStopU2X>
@@ -72,9 +72,9 @@
           <BeforeMake>
             <RunUserProg1>0</RunUserProg1>
             <RunUserProg2>0</RunUserProg2>
-            <UserProg1Name>
-            </UserProg1Name><UserProg2Name>
-            </UserProg2Name><UserProg1Dos16Mode>0</UserProg1Dos16Mode>
+            <UserProg1Name></UserProg1Name>
+            <UserProg2Name></UserProg2Name>
+            <UserProg1Dos16Mode>0</UserProg1Dos16Mode>
             <UserProg2Dos16Mode>0</UserProg2Dos16Mode>
             <nStopB1X>0</nStopB1X>
             <nStopB2X>0</nStopB2X>
@@ -82,16 +82,16 @@
           <AfterMake>
             <RunUserProg1>0</RunUserProg1>
             <RunUserProg2>0</RunUserProg2>
-            <UserProg1Name>
-            </UserProg1Name><UserProg2Name>
-            </UserProg2Name><UserProg1Dos16Mode>0</UserProg1Dos16Mode>
+            <UserProg1Name></UserProg1Name>
+            <UserProg2Name></UserProg2Name>
+            <UserProg1Dos16Mode>0</UserProg1Dos16Mode>
             <UserProg2Dos16Mode>0</UserProg2Dos16Mode>
             <nStopA1X>0</nStopA1X>
             <nStopA2X>0</nStopA2X>
           </AfterMake>
           <SelectedForBatchBuild>0</SelectedForBatchBuild>
-          <SVCSIdString>
-          </SVCSIdString></TargetCommonOption>
+          <SVCSIdString></SVCSIdString>
+        </TargetCommonOption>
         <CommonProperty>
           <UseCPPCompiler>0</UseCPPCompiler>
           <RVCTCodeConst>0</RVCTCodeConst>
@@ -104,9 +104,9 @@
           <AssembleAssemblyFile>0</AssembleAssemblyFile>
           <PublicsOnly>0</PublicsOnly>
           <StopOnExitCode>3</StopOnExitCode>
-          <CustomArgument>
-          </CustomArgument><IncludeLibraryModules>
-          </IncludeLibraryModules><ComprImg>1</ComprImg>
+          <CustomArgument></CustomArgument>
+          <IncludeLibraryModules></IncludeLibraryModules>
+          <ComprImg>1</ComprImg>
         </CommonProperty>
         <DllOption>
           <SimDllName>SARMCM3.DLL</SimDllName>
@@ -139,11 +139,11 @@
           <bUseTDR>1</bUseTDR>
           <Flash2>BIN\UL2CM3.DLL</Flash2>
           <Flash3>"" ()</Flash3>
-          <Flash4>
-          </Flash4><pFcarmOut>
-          </pFcarmOut><pFcarmGrp>
-          </pFcarmGrp><pFcArmRoot>
-          </pFcArmRoot><FcArmLst>0</FcArmLst>
+          <Flash4></Flash4>
+          <pFcarmOut></pFcarmOut>
+          <pFcarmGrp></pFcarmGrp>
+          <pFcArmRoot></pFcArmRoot>
+          <FcArmLst>0</FcArmLst>
         </Utilities>
         <TargetArmAds>
           <ArmAdsMisc>
@@ -175,8 +175,8 @@
             <RvctClst>0</RvctClst>
             <GenPPlst>0</GenPPlst>
             <AdsCpuType>"Cortex-M7"</AdsCpuType>
-            <RvctDeviceName>
-            </RvctDeviceName><mOS>0</mOS>
+            <RvctDeviceName></RvctDeviceName>
+            <mOS>0</mOS>
             <uocRom>0</uocRom>
             <uocRam>0</uocRam>
             <hadIROM>1</hadIROM>
@@ -301,8 +301,8 @@
               </OCR_RVCT8>
               <OCR_RVCT9>
                 <Type>0</Type>
-                <StartAddress>0x24000000</StartAddress>
-                <Size>0x80000</Size>
+                <StartAddress>0x20000000</StartAddress>
+                <Size>0x20000</Size>
               </OCR_RVCT9>
               <OCR_RVCT10>
                 <Type>0</Type>
@@ -310,8 +310,8 @@
                 <Size>0x0</Size>
               </OCR_RVCT10>
             </OnChipMemories>
-            <RvctStartVector>
-            </RvctStartVector></ArmAdsMisc>
+            <RvctStartVector></RvctStartVector>
+          </ArmAdsMisc>
           <Cads>
             <interw>1</interw>
             <Optim>2</Optim>
@@ -339,8 +339,8 @@
             <VariousControls>
               <MiscControls>-Wno-invalid-source-encoding</MiscControls>
               <Define>USE_HAL_DRIVER,STM32H7R3xx</Define>
-              <Undefine>
-              </Undefine><IncludePath>..\..\Drivers;..\..\Drivers\CMSIS\Include;..\..\Drivers\CMSIS\Device\ST\STM32H7RSxx\Include;..\..\Drivers\STM32H7RSxx_HAL_Driver\Inc;..\..\Drivers\STM32H7RSxx_HAL_Driver\Inc\Legacy;..\..\Middlewares;..\..\Middlewares\ST\AI\Inc;..\..\User;..\..\Middlewares\LVGL\GUI;..\..\Middlewares\LVGL\GUI\lvgl;..\..\Middlewares\LVGL\GUI\lvgl\src;..\..\Middlewares\LVGL\Font</IncludePath>
+              <Undefine></Undefine>
+              <IncludePath>..\..\Drivers;..\..\Drivers\CMSIS\Include;..\..\Drivers\CMSIS\Device\ST\STM32H7RSxx\Include;..\..\Drivers\STM32H7RSxx_HAL_Driver\Inc;..\..\Drivers\STM32H7RSxx_HAL_Driver\Inc\Legacy;..\..\Middlewares;..\..\Middlewares\ST\AI\Inc;..\..\Middlewares\ATKQR\Inc;..\..\User;..\..\Middlewares\LVGL\GUI;..\..\Middlewares\LVGL\GUI\lvgl;..\..\Middlewares\LVGL\GUI\lvgl\src;..\..\Middlewares\LVGL\Font</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -355,10 +355,11 @@
             <useXO>0</useXO>
             <ClangAsOpt>1</ClangAsOpt>
             <VariousControls>
-              <MiscControls></MiscControls>              <Define>
-              </Define><Undefine>
-              </Undefine><IncludePath>
-</IncludePath>            </VariousControls>
+              <MiscControls></MiscControls>
+              <Define></Define>
+              <Undefine></Undefine>
+              <IncludePath></IncludePath>
+            </VariousControls>
           </Aads>
           <LDads>
             <umfTarg>0</umfTarg>
@@ -367,16 +368,16 @@
             <noStLib>0</noStLib>
             <RepFail>1</RepFail>
             <useFile>0</useFile>
-            <TextAddressRange>
-            </TextAddressRange><DataAddressRange>
-            </DataAddressRange><pXoBase>
-            </pXoBase><ScatterFile>..\..\User\Script\ATK-DNH7R3_flash_ROMxspi1.sct</ScatterFile>
-            <IncludeLibs>
-            </IncludeLibs><IncludeLibsPath>
-            </IncludeLibsPath><Misc>--diag_suppress L6314,L6329 --keep network_weights_bin.o(network_weights_section)</Misc>
-            <LinkerInputFile>
-            </LinkerInputFile><DisabledWarnings>
-            </DisabledWarnings></LDads>
+            <TextAddressRange></TextAddressRange>
+            <DataAddressRange></DataAddressRange>
+            <pXoBase></pXoBase>
+            <ScatterFile>..\..\User\Script\ATK-DNH7R3_flash_ROMxspi1_camrun_fast.sct</ScatterFile>
+            <IncludeLibs></IncludeLibs>
+            <IncludeLibsPath></IncludeLibsPath>
+            <Misc>--diag_suppress L6314,L6329</Misc>
+            <LinkerInputFile></LinkerInputFile>
+            <DisabledWarnings></DisabledWarnings>
+          </LDads>
         </TargetArmAds>
       </TargetOption>
       <Groups>
@@ -419,6 +420,16 @@
               <FilePath>..\..\User\app\product_catalog.c</FilePath>
             </File>
             <File>
+              <FileName>payment_qr.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\User\app\payment_qr.c</FilePath>
+            </File>
+            <File>
+              <FileName>payment_qr_test.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\User\app\payment_qr_test.c</FilePath>
+            </File>
+            <File>
               <FileName>network.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\User\network.c</FilePath>
@@ -439,9 +450,9 @@
               <FilePath>..\..\User\ai_class_labels.c</FilePath>
             </File>
             <File>
-              <FileName>network_weights_bin.s</FileName>
+              <FileName>network_weights_bin_fast.s</FileName>
               <FileType>2</FileType>
-              <FilePath>..\..\User\network_weights_bin.s</FilePath>
+              <FilePath>..\..\User\network_weights_bin_fast.s</FilePath>
             </File>
             <File>
               <FileName>system_stm32h7rsxx.c</FileName>
@@ -627,6 +638,21 @@
               <FileName>NetworkRuntime1020_CM7_Keil.lib</FileName>
               <FileType>4</FileType>
               <FilePath>..\..\Middlewares\ST\AI\Lib\NetworkRuntime1020_CM7_Keil.lib</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Drivers/BSP/ATKQR</GroupName>
+          <Files>
+            <File>
+              <FileName>atk_qrdecode.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\Drivers\BSP\ATKQR\atk_qrdecode.c</FilePath>
+            </File>
+            <File>
+              <FileName>ATK_QR_V1.4.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>..\..\Drivers\BSP\ATKQR\ATK_QR_V1.4.lib</FilePath>
             </File>
           </Files>
         </Group>
@@ -1539,14 +1565,14 @@
               <FilePath>..\\..\\User\\ui\\lvgl_port.c</FilePath>
             </File>
             <File>
-              <FileName>ui_checkout_main.c</FileName>
+              <FileName>checkout_ui.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\\..\\User\\ui\\ui_checkout_main.c</FilePath>
+              <FilePath>..\\..\\User\\ui\\checkout_ui.c</FilePath>
             </File>
             <File>
-              <FileName>ui_dialog.c</FileName>
+              <FileName>checkout_icons.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\\..\\User\\ui\\ui_dialog.c</FilePath>
+              <FilePath>..\\..\\User\\ui\\checkout_icons.c</FilePath>
             </File>
           </Files>
         </Group>

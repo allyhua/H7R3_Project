@@ -1,7 +1,7 @@
 /**
  ****************************************************************************************************
- * @file        ATK-DNH7R3_flash_ROMxspi1.sct
- * @brief       Scatter-loading description for X-CUBE-AI with external weights image
+ * @file        ATK-DNH7R3_flash_ROMxspi1_camrun_fast.sct
+ * @brief       Scatter-loading description for camera runtime layout without reprogramming external weights
  ****************************************************************************************************
  */
 
@@ -34,17 +34,8 @@ LR_IROM1 0x08000000 0x00010000 {
         norflash_w25q128_dual.o
         norflash_ex.o
     }
-    RW_IRAM0 0x20000000 0x00002000 {
-        startup_stm32h7r3xx.o (STACK, HEAP)
-    }
     RW_IRAM1 0x24000000 0x00080000 {
         .ANY (+RW +ZI)
-    }
-}
-
-LR_WEIGHTS 0x90000000 0x00300000 {
-    ER_WEIGHTS 0x90000000 0x00300000 {
-        network_weights_bin.o (network_weights_section)
     }
 }
 

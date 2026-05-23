@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 
-LV_FONT_DECLARE(lv_font_montserrat_20);
+LV_FONT_DECLARE(Font20);
 LV_FONT_DECLARE(lv_font_montserrat_32);
 
 #define UI_BASE_W                480
@@ -145,7 +145,7 @@ static lv_obj_t *checkout_ui_create_card(lv_obj_t *parent, lv_coord_t x, lv_coor
 
 static void checkout_ui_apply_font(lv_obj_t *obj)
 {
-    lv_obj_set_style_text_font(obj, &lv_font_montserrat_20, 0);
+    lv_obj_set_style_text_font(obj, &Font20, 0);
 }
 
 static void checkout_ui_set_button_style(lv_obj_t *button, lv_color_t bg_color, lv_color_t pressed_color)
@@ -187,7 +187,7 @@ static void checkout_ui_format_weight_info(uint32_t weight_gram,
         uint32_t seconds_x10 = (recognition_time_ms_x10 + 500U) / 1000U;
         snprintf(buffer,
                  size,
-                 "Weight: %lu.%03lu kg | Time: %lu.%01lu s",
+                 "当前重量：%lu.%03lu 千克  识别耗时：%lu.%01lu 秒",
                  (unsigned long)(weight_gram / 1000U),
                  (unsigned long)(weight_gram % 1000U),
                  (unsigned long)(seconds_x10 / 10U),
@@ -197,7 +197,7 @@ static void checkout_ui_format_weight_info(uint32_t weight_gram,
     {
         snprintf(buffer,
                  size,
-                 "Weight: %lu.%03lu kg | Time: --",
+                 "当前重量：%lu.%03lu 千克  识别耗时：--",
                  (unsigned long)(weight_gram / 1000U),
                  (unsigned long)(weight_gram % 1000U));
     }
@@ -207,32 +207,32 @@ static const char *checkout_ui_status_text(const camera_workflow_state_t *state)
 {
     if (state == NULL)
     {
-        return "Place item";
+        return "请放置商品";
     }
 
     switch (state->trigger_state)
     {
         case CAMERA_TRIGGER_EMPTY:
-            return "Place item";
+            return "请放置商品";
 
         case CAMERA_TRIGGER_DETECT_PLACEMENT:
-            return "Item detected";
+            return "检测到商品";
 
         case CAMERA_TRIGGER_WAIT_STABLE:
-            return "Waiting for stable weight";
+            return "等待重量稳定";
 
         case CAMERA_TRIGGER_RECOGNIZING:
-            return "Stable weight, recognizing";
+            return "重量稳定，识别中";
 
         case CAMERA_TRIGGER_WAIT_REMOVE:
             if (state->last_cart_add.valid != 0U)
             {
-                return "Remove item to continue";
+                return "请取走商品后继续";
             }
-            return "Recognition failed";
+            return "识别失败";
 
         default:
-            return "Place item";
+            return "请放置商品";
     }
 }
 
@@ -295,11 +295,11 @@ static void checkout_ui_show_notice(camera_workflow_state_t *state)
 
     if (notice_type == CAMERA_NOTICE_RECOGNIZE_FAIL)
     {
-        checkout_ui_show_error("Recognition Failed", "Remove the item and try again.");
+        checkout_ui_show_error("识别失败", (notice_text[0] != '\0') ? notice_text : "请取走商品后重试");
     }
     else
     {
-        checkout_ui_show_error("Notice", "Please try again.");
+        checkout_ui_show_error("提示", (notice_text[0] != '\0') ? notice_text : "请重试");
     }
 }
 
@@ -401,7 +401,7 @@ static void checkout_ui_build_layout(void)
     g_ui.preview_placeholder = lv_label_create(image_box);
     checkout_ui_apply_font(g_ui.preview_placeholder);
     lv_obj_set_style_text_color(g_ui.preview_placeholder, lv_color_hex(UI_COLOR_TEXT_SECONDARY), 0);
-    lv_label_set_text(g_ui.preview_placeholder, "Image Area");
+    lv_label_set_text(g_ui.preview_placeholder, "图像显示区域");
     lv_obj_center(g_ui.preview_placeholder);
 
     result_card = checkout_ui_create_card(g_ui.screen,
@@ -447,7 +447,7 @@ static void checkout_ui_build_layout(void)
     label = lv_label_create(cart_card);
     checkout_ui_apply_font(label);
     lv_obj_set_style_text_color(label, lv_color_hex(UI_COLOR_TEXT), 0);
-    lv_label_set_text(label, "Cart");
+    lv_label_set_text(label, "购物车");
     lv_obj_align(label, LV_ALIGN_TOP_MID, 0, checkout_ui_scale_y(10));
 
     line = lv_obj_create(cart_card);
@@ -488,7 +488,7 @@ static void checkout_ui_build_layout(void)
     label = lv_label_create(total_card);
     checkout_ui_apply_font(label);
     lv_obj_set_style_text_color(label, lv_color_hex(UI_COLOR_TEXT), 0);
-    lv_label_set_text(label, "Total:");
+    lv_label_set_text(label, "总价：");
     lv_obj_set_pos(label, checkout_ui_scale_x(20), checkout_ui_scale_y(18));
 
     g_ui.total_value_label = lv_label_create(total_card);
@@ -499,7 +499,7 @@ static void checkout_ui_build_layout(void)
     g_ui.total_unit_label = lv_label_create(total_card);
     checkout_ui_apply_font(g_ui.total_unit_label);
     lv_obj_set_style_text_color(g_ui.total_unit_label, lv_color_hex(UI_COLOR_ACCENT_RED), 0);
-    lv_label_set_text(g_ui.total_unit_label, "yuan");
+    lv_label_set_text(g_ui.total_unit_label, "元");
 
     button = lv_btn_create(g_ui.screen);
     lv_obj_set_pos(button, checkout_ui_scale_x(UI_BUTTON_1_X), checkout_ui_scale_y(UI_BUTTON_1_Y));
@@ -509,7 +509,7 @@ static void checkout_ui_build_layout(void)
     button_label = lv_label_create(button);
     checkout_ui_apply_font(button_label);
     lv_obj_set_style_text_color(button_label, lv_color_hex(0xFFFFFF), 0);
-    lv_label_set_text(button_label, "Checkout");
+    lv_label_set_text(button_label, "结账");
     lv_obj_center(button_label);
 
     button = lv_btn_create(g_ui.screen);
@@ -520,7 +520,7 @@ static void checkout_ui_build_layout(void)
     button_label = lv_label_create(button);
     checkout_ui_apply_font(button_label);
     lv_obj_set_style_text_color(button_label, lv_color_hex(0xFFFFFF), 0);
-    lv_label_set_text(button_label, "Remove Selected");
+    lv_label_set_text(button_label, "删除选中项");
     lv_obj_center(button_label);
 
     button = lv_btn_create(g_ui.screen);
@@ -531,7 +531,7 @@ static void checkout_ui_build_layout(void)
     button_label = lv_label_create(button);
     checkout_ui_apply_font(button_label);
     lv_obj_set_style_text_color(button_label, lv_color_hex(0xFFFFFF), 0);
-    lv_label_set_text(button_label, "Clear Cart");
+    lv_label_set_text(button_label, "清空购物车");
     lv_obj_center(button_label);
 
     button = lv_btn_create(g_ui.screen);
@@ -542,7 +542,7 @@ static void checkout_ui_build_layout(void)
     button_label = lv_label_create(button);
     checkout_ui_apply_font(button_label);
     lv_obj_set_style_text_color(button_label, lv_color_hex(0xFFFFFF), 0);
-    lv_label_set_text(button_label, "Continue");
+    lv_label_set_text(button_label, "继续购物");
     lv_obj_center(button_label);
 }
 
@@ -609,21 +609,21 @@ void checkout_ui_set_recognition_result(const cart_add_result_t *result)
 
     product = product_catalog_get(result->product_id);
 
-    snprintf(text, sizeof(text), "Item: %s", result->product_name);
+    snprintf(text, sizeof(text), "商品：%s", result->product_name);
     lv_label_set_text(g_ui.result_name_label, text);
 
     if (product != NULL)
     {
         snprintf(text,
                  sizeof(text),
-                 "Price: %lu.%02lu %s",
+                 "单价：%lu.%02lu %s",
                  (unsigned long)(product->unit_price_cent / 100U),
                  (unsigned long)(product->unit_price_cent % 100U),
                  product->price_unit_text);
     }
     else
     {
-        snprintf(text, sizeof(text), "Price: --");
+        snprintf(text, sizeof(text), "单价：--");
     }
     lv_label_set_text(g_ui.result_price_label, text);
 
@@ -631,19 +631,23 @@ void checkout_ui_set_recognition_result(const cart_add_result_t *result)
     {
         snprintf(text,
                  sizeof(text),
-                 "Weight: %lu.%03lu kg",
+                 "重量：%lu.%03lu 千克",
                  (unsigned long)(result->measured_weight_g / 1000U),
                  (unsigned long)(result->measured_weight_g % 1000U));
     }
     else
     {
-        snprintf(text, sizeof(text), "Qty: %lu pcs", (unsigned long)result->counted_units);
+        snprintf(text,
+                 sizeof(text),
+                 "数量：%lu %s",
+                 (unsigned long)result->counted_units,
+                 (product != NULL) ? product->display_unit_text : "件");
     }
     lv_label_set_text(g_ui.result_amount_label, text);
 
     snprintf(text,
              sizeof(text),
-             "Subtotal: %lu.%02lu",
+             "小计：%lu.%02lu 元",
              (unsigned long)(result->subtotal_cent / 100U),
              (unsigned long)(result->subtotal_cent % 100U));
     lv_label_set_text(g_ui.result_subtotal_label, text);
@@ -651,10 +655,10 @@ void checkout_ui_set_recognition_result(const cart_add_result_t *result)
 
 void checkout_ui_clear_recognition_result(void)
 {
-    lv_label_set_text(g_ui.result_name_label, "Item: --");
-    lv_label_set_text(g_ui.result_price_label, "Price: --");
-    lv_label_set_text(g_ui.result_amount_label, "Weight/Qty: --");
-    lv_label_set_text(g_ui.result_subtotal_label, "Subtotal: --");
+    lv_label_set_text(g_ui.result_name_label, "商品：--");
+    lv_label_set_text(g_ui.result_price_label, "单价：--");
+    lv_label_set_text(g_ui.result_amount_label, "重量/数量：--");
+    lv_label_set_text(g_ui.result_subtotal_label, "小计：--");
 }
 
 void checkout_ui_refresh_cart(const cart_context_t *cart, int32_t selected_index)
@@ -731,14 +735,14 @@ void checkout_ui_refresh_cart(const cart_context_t *cart, int32_t selected_index
         top_total = lv_label_create(row);
         checkout_ui_apply_font(top_total);
         lv_obj_set_style_text_color(top_total, lv_color_hex(UI_COLOR_TEXT), 0);
-        lv_label_set_text_fmt(top_total, "%s", total_text);
+        lv_label_set_text_fmt(top_total, "%s 元", total_text);
         lv_obj_align(top_total, LV_ALIGN_TOP_RIGHT, -checkout_ui_scale_x(8), checkout_ui_scale_y(4));
 
         if (item->pricing_mode == PRODUCT_PRICING_BY_WEIGHT)
         {
             snprintf(amount_text,
                      sizeof(amount_text),
-                     "%lu.%03lu kg",
+                     "重量：%lu.%03lu 千克",
                      (unsigned long)(item->total_weight_g / 1000U),
                      (unsigned long)(item->total_weight_g % 1000U));
         }
@@ -746,18 +750,18 @@ void checkout_ui_refresh_cart(const cart_context_t *cart, int32_t selected_index
         {
             snprintf(amount_text,
                      sizeof(amount_text),
-                     "%lu %s",
+                     "数量：%lu %s",
                      (unsigned long)item->total_count,
-                     (product != NULL) ? product->display_unit_text : "pc");
+                     (product != NULL) ? product->display_unit_text : "件");
         }
 
         snprintf(price_text,
                  sizeof(price_text),
-                 "%lu.%02lu %s",
+                 "单价：%lu.%02lu %s",
                  (unsigned long)(item->unit_price_cent / 100U),
                  (unsigned long)(item->unit_price_cent % 100U),
                  (product != NULL) ? product->price_unit_text
-                                   : ((item->pricing_mode == PRODUCT_PRICING_BY_WEIGHT) ? "/kg" : "/pc"));
+                                   : ((item->pricing_mode == PRODUCT_PRICING_BY_WEIGHT) ? "元/千克" : "元/件"));
 
         bottom_amount = lv_label_create(row);
         checkout_ui_apply_font(bottom_amount);
@@ -785,7 +789,7 @@ void checkout_ui_refresh_cart(const cart_context_t *cart, int32_t selected_index
         lv_obj_t *empty_label = lv_label_create(g_ui.cart_scroll);
         checkout_ui_apply_font(empty_label);
         lv_obj_set_style_text_color(empty_label, lv_color_hex(0x999999), 0);
-        lv_label_set_text(empty_label, "Cart is empty");
+        lv_label_set_text(empty_label, "购物车为空");
         lv_obj_center(empty_label);
     }
 
@@ -814,10 +818,10 @@ void checkout_ui_show_checkout_done(uint32_t total_price_cent)
 
     snprintf(message,
              sizeof(message),
-             "Thank you. Paid %lu.%02lu yuan.",
+             "感谢使用本系统\n本次总金额：%lu.%02lu 元",
              (unsigned long)(total_price_cent / 100U),
              (unsigned long)(total_price_cent % 100U));
-    ui_dialog_show_message("Checkout Done", message);
+    ui_dialog_show_message("结账完成", message);
 }
 
 static void checkout_ui_row_event_cb(lv_event_t *e)
@@ -840,7 +844,7 @@ static void checkout_ui_finish_event_cb(lv_event_t *e)
 
     if ((g_ui.workflow == NULL) || (g_ui.workflow->cart.item_count == 0U))
     {
-        checkout_ui_show_error("Checkout", "Cart is empty.");
+        checkout_ui_show_error("结账", "购物车为空");
         return;
     }
 
@@ -862,7 +866,7 @@ static void checkout_ui_delete_event_cb(lv_event_t *e)
 
     if (camera_workflow_remove_selected_item(g_ui.workflow) != 0)
     {
-        checkout_ui_show_error("Selection Required", "Select an item first.");
+        checkout_ui_show_error("需要选择", "请先选择商品");
     }
 
     g_ui.last_total_cent = 0xFFFFFFFFU;
@@ -880,13 +884,13 @@ static void checkout_ui_clear_event_cb(lv_event_t *e)
 
     if (g_ui.workflow->cart.item_count == 0U)
     {
-        checkout_ui_show_error("Clear Cart", "Cart is already empty.");
+        checkout_ui_show_error("清空购物车", "购物车已经为空");
         return;
     }
 
     camera_workflow_clear_cart(g_ui.workflow);
     camera_workflow_continue_shopping(g_ui.workflow);
-    checkout_ui_show_error("Cart Cleared", "All items were removed.");
+    checkout_ui_show_error("已清空", "已移除全部商品");
     g_ui.last_total_cent = 0xFFFFFFFFU;
     ui_checkout_refresh_all(g_ui.workflow);
 }
@@ -925,10 +929,10 @@ static void ui_checkout_refresh_all(camera_workflow_state_t *state)
     }
     else if (state->trigger_state == CAMERA_TRIGGER_WAIT_REMOVE)
     {
-        lv_label_set_text(g_ui.result_name_label, "Item: Failed");
-        lv_label_set_text(g_ui.result_price_label, "Price: --");
-        lv_label_set_text(g_ui.result_amount_label, "Weight/Qty: --");
-        lv_label_set_text(g_ui.result_subtotal_label, "Subtotal: Try again");
+        lv_label_set_text(g_ui.result_name_label, "商品：识别失败");
+        lv_label_set_text(g_ui.result_price_label, "单价：--");
+        lv_label_set_text(g_ui.result_amount_label, "重量/数量：--");
+        lv_label_set_text(g_ui.result_subtotal_label, "小计：请重试");
     }
     else
     {
@@ -1004,7 +1008,7 @@ void ui_checkout_refresh_total(camera_workflow_state_t *state)
 
 void ui_checkout_show_recognize_fail(const char *message)
 {
-    checkout_ui_show_error("Recognition Failed", (message != NULL) ? message : "Remove the item and try again.");
+    checkout_ui_show_error("识别失败", (message != NULL) ? message : "请取走商品后重试");
 }
 
 void ui_checkout_show_checkout_done(uint32_t total_price_cent)

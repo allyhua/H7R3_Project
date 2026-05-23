@@ -493,6 +493,10 @@ int APP_AI_ClassifyRgb565Roi(const uint16_t *rgb565_frame,
     }
 
     e2e_cycles_start = ai_cycle_counter_get();
+    if (verbose == 0U)
+    {
+        printf("[AI] Live preprocess start\r\n");
+    }
     res = ai_prepare_input_from_rgb565_roi(rgb565_frame,
                                            frame_width,
                                            frame_height,
@@ -504,16 +508,32 @@ int APP_AI_ClassifyRgb565Roi(const uint16_t *rgb565_frame,
                                            verbose);
     if (res == 0)
     {
+        if (verbose == 0U)
+        {
+            printf("[AI] Live preprocess done\r\n");
+        }
         if (verbose != 0U)
         {
             printf("[AI] Running network...\r\n");
         }
+        else
+        {
+            printf("[AI] Live network run start\r\n");
+        }
         run_cycles_start = ai_cycle_counter_get();
         res = ai_run();
         run_cycles_end = ai_cycle_counter_get();
+        if (verbose == 0U)
+        {
+            printf("[AI] Live network run done, res=%d\r\n", res);
+        }
     }
     else
     {
+        if (verbose == 0U)
+        {
+            printf("[AI] Live preprocess failed, res=%d\r\n", res);
+        }
         run_cycles_start = 0U;
         run_cycles_end = 0U;
     }
@@ -527,7 +547,15 @@ int APP_AI_ClassifyRgb565Roi(const uint16_t *rgb565_frame,
                    run_cycles,
                    ai_cycles_to_ms(run_cycles));
         }
+        else
+        {
+            printf("[AI] Live postprocess start\r\n");
+        }
         res = ai_post_process(effective_sample_name, out_result, verbose);
+        if (verbose == 0U)
+        {
+            printf("[AI] Live postprocess done, res=%d\r\n", res);
+        }
     }
 
     if (res == 0)

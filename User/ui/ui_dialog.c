@@ -2,7 +2,7 @@
 
 #include "lvgl.h"
 
-LV_FONT_DECLARE(lv_font_montserrat_20);
+LV_FONT_DECLARE(Font20);
 
 static lv_obj_t *g_dialog_overlay = NULL;
 
@@ -57,14 +57,14 @@ void ui_dialog_show_message(const char *title, const char *message)
     lv_obj_set_style_pad_all(panel, 16, 0);
 
     label = lv_label_create(panel);
-    lv_obj_set_style_text_font(label, &lv_font_montserrat_20, 0);
+    lv_obj_set_style_text_font(label, &Font20, 0);
     lv_obj_set_style_text_color(label, lv_color_hex(0x222222), 0);
     lv_label_set_text(label, title);
     lv_obj_align(label, LV_ALIGN_TOP_MID, 0, 4);
 
     label = lv_label_create(panel);
     lv_obj_set_width(label, 300);
-    lv_obj_set_style_text_font(label, &lv_font_montserrat_20, 0);
+    lv_obj_set_style_text_font(label, &Font20, 0);
     lv_obj_set_style_text_color(label, lv_color_hex(0x666666), 0);
     lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, 0);
     lv_label_set_long_mode(label, LV_LABEL_LONG_WRAP);
@@ -81,8 +81,8 @@ void ui_dialog_show_message(const char *title, const char *message)
     lv_obj_add_event_cb(button, ui_dialog_close_event_cb, LV_EVENT_CLICKED, NULL);
 
     button_label = lv_label_create(button);
-    lv_obj_set_style_text_font(button_label, &lv_font_montserrat_20, 0);
+    lv_obj_set_style_text_font(button_label, &Font20, 0);
     lv_obj_set_style_text_color(button_label, lv_color_hex(0xFFFFFF), 0);
-    lv_label_set_text(button_label, "OK");
+    lv_label_set_text(button_label, "确定");
     lv_obj_center(button_label);
 }
