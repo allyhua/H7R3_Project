@@ -39,6 +39,9 @@ docs/竞赛准备清单.md
 .agents/
 .claude/
 
+# Local readme
+readme.txt
+
 # Keep project and source assets tracked
 !*.uvprojx
 !network_data.bin
