@@ -4,8 +4,6 @@
 
 本项目是一个基于意法半导体STM32H7R3高性能MCU的智能自助结账系统，集成了AI商品识别、二维码支付、智能人机交互等功能，适用于超市、便利店、无人零售等多种应用场景。
 
-**参赛信息**: 2026年全国大学生嵌入式芯片与系统设计竞赛 - 意法半导体赛题
-
 ## 技术亮点
 
 ### 核心技术
@@ -74,32 +72,18 @@
 ## 项目结构
 
 ```
-e:\H7R3\自助结账/
-├── .agents/              # AI助手配置
-├── .git/                 # Git版本控制
 ├── Drivers/              # STM32 HAL驱动
 ├── Middlewares/          # 中间件 (LVGL, STM32Cube.AI)
-├── Output/               # 编译输出
 ├── Projects/             # Keil工程文件
 ├── tools/                # 工具脚本
 ├── docs/                 # 文档目录
 │   ├── AGENTS.md              # AI助手说明
 │   ├── PROJECT_STRUCTURE.md   # 项目结构说明
 │   ├── START_HERE.md          # 快速开始指南
-│   ├── 竞赛项目设计报告.md     # 竞赛设计报告
 │   ├── 性能测试报告.md        # 性能测试数据
 │   └── 系统架构图.md          # 系统架构文档
 ├── User/                 # 用户代码
 │   ├── ai/                   # AI相关代码
-│   │   ├── ai_class_labels.*     # AI类别标签
-│   │   ├── app_x-cube-ai.*       # AI应用代码
-│   │   ├── constants_ai.h        # AI常量定义
-│   │   ├── network.*             # 网络模型
-│   │   ├── network_data.*        # 网络数据
-│   │   ├── network_data_params.* # 网络参数
-│   │   ├── network_details.h     # 网络详情
-│   │   ├── network_weights_bin.* # 网络权重
-│   │   └── network_data.bin     # 权重数据
 │   ├── app/                  # 应用层代码
 │   │   ├── camera_workflow.c     # 摄像头工作流
 │   │   └── payment_qr.c          # 支付二维码
@@ -108,11 +92,10 @@ e:\H7R3\自助结账/
 │   │   ├── dialogs/             # 对话框
 │   │   ├── checkout_ui.c         # 结账UI
 │   │   ├── ui_checkout_main.c    # UI主界面
-│   │   ├── lvgl_port.c          # LVGL移植
-│   │   └── checkout_icons.*     # UI图标
+│   │   └── lvgl_port.c          # LVGL移植
 │   ├── main.c               # 主程序
 │   └── stm32h7rsxx_it.c     # 中断处理
-└── README.md             # 项目说明
+└── README.md
 ```
 
 ## 编译说明
@@ -165,15 +148,7 @@ e:\H7R3\自助结账/
 | 商品识别准确率 | >92% |
 | 二维码识别准确率 | >95% |
 
-## 竞赛相关文档
-
-### 竞赛提交材料
-1. **项目设计报告**: `docs/竞赛项目设计报告.md` (需转换为PDF)
-2. **性能测试报告**: `docs/性能测试报告.md`
-3. **系统架构图**: `docs/系统架构图.md`
-4. **演示视频**: 需要自行录制 (MP4格式，3分钟内，300M以内)
-
-### 技术文档
+## 技术文档
 - **项目结构说明**: `docs/PROJECT_STRUCTURE.md`
 - **快速开始指南**: `docs/START_HERE.md`
 - **AI助手说明**: `docs/AGENTS.md`
@@ -199,29 +174,21 @@ e:\H7R3\自助结账/
 - UI流畅度提升100%
 - 功耗降低30-35%
 
-## 开发团队
-
-**参赛队伍**: [队伍名称]
-**指导教师**: [指导教师姓名]
-**开发成员**: [成员姓名]
-
 ## 技术支持
 
 - 意法半导体STM32生态: https://www.stmcu.com.cn/
 - STM32Cube.AI文档: https://www.st.com/zh/embedded-software/stm32cube-ai
 - LVGL文档: https://docs.lvgl.io/
-- 竞赛官网: https://www.socchina.net/
 
 ## 许可证
 
-本项目仅用于学术研究和竞赛用途。
+本项目仅用于学术研究用途。
 
 ## 更新日志
 
 ### 2026-05-24
 - 完成文件结构优化
 - 完成性能优化
-- 创建竞赛相关文档
 - 更新README文档
 
 ### 2026-05-21
@@ -232,5 +199,4 @@ e:\H7R3\自助结账/
 
 ---
 
-**项目状态**: 竞赛准备完成
 **最后更新**: 2026年5月24日
