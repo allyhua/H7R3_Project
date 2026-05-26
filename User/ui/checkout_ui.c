@@ -1,5 +1,5 @@
-﻿#include "ui/checkout_ui.h"
-#include "ui/checkout_icons.h"
+#include "ui/checkout_ui.h"
+#include "ui/icons/checkout_icons.h"
 
 #include <stdio.h>
 #include <stdint.h>

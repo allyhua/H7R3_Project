@@ -34,7 +34,6 @@ uint32_t hx711_read(void)
     uint32_t timeout = 0x00FFFFFFU;
 
     HX711_SCK_WRITE(GPIO_PIN_RESET);
-    delay_us(1);
 
     while (HX711_DOUT_READ() == GPIO_PIN_SET)
     {
@@ -48,7 +47,6 @@ uint32_t hx711_read(void)
     {
         HX711_SCK_WRITE(GPIO_PIN_SET);
         value <<= 1;
-        delay_us(1);
         HX711_SCK_WRITE(GPIO_PIN_RESET);
 
         if (HX711_DOUT_READ() == GPIO_PIN_SET)
@@ -56,14 +54,20 @@ uint32_t hx711_read(void)
             value |= 0x01U;
         }
 
-        delay_us(1);
+        if ((i & 0x03) == 0x03)
+        {
+            delay_us(1);
+        }
     }
 
     HX711_SCK_WRITE(GPIO_PIN_SET);
     value ^= 0x800000U;
     delay_us(1);
     HX711_SCK_WRITE(GPIO_PIN_RESET);
-    delay_us(1);
 
     return value;
 }
+
+
+
+

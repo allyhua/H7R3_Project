@@ -27,6 +27,18 @@
 # Keil debug configuration is often machine/user specific
 Projects/MDK-ARM/DebugConfig/
 
+# Python bytecode
+__pycache__/
+*.pyc
+
+# Competition docs (not for public repo)
+docs/竞赛项目设计报告.md
+docs/竞赛准备清单.md
+
+# AI agent config
+.agents/
+.claude/
+
 # Keep project and source assets tracked
 !*.uvprojx
 !network_data.bin

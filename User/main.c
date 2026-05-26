@@ -8,7 +8,7 @@
 #include <inttypes.h>
 #include <stdio.h>
 #include <string.h>
-#include "app_x-cube-ai.h"
+#include "ai/app_x-cube-ai.h"
 #include "app/camera_workflow.h"
 #include "app/payment_qr.h"
 #include "app/payment_qr_test.h"
@@ -16,8 +16,8 @@
 #include "lvgl.h"
 #include "ui/lvgl_port.h"
 #include "ui/checkout_ui.h"
-#include "network.h"
-#include "network_data.h"
+#include "ai/network.h"
+#include "ai/network_data.h"
 
 volatile uint8_t g_ov_frame = 0U;
 

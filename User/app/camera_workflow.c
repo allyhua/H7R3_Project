@@ -7,7 +7,7 @@
 #include "./BSP/LCD/lcd.h"
 #include "./BSP/LED/led.h"
 #include "./BSP/OV2640/ov2640.h"
-#include "ai_class_labels.h"
+#include "ai/ai_class_labels.h"
 #include "app/product_catalog.h"
 #include <stdio.h>
 #include <string.h>

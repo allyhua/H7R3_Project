@@ -402,7 +402,7 @@
             <File>
               <FileName>app_x-cube-ai.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\User\app_x-cube-ai.c</FilePath>
+              <FilePath>..\..\User\ai\app_x-cube-ai.c</FilePath>
             </File>
             <File>
               <FileName>camera_workflow.c</FileName>
@@ -432,27 +432,27 @@
             <File>
               <FileName>network.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\User\network.c</FilePath>
+              <FilePath>..\..\User\ai\network.c</FilePath>
             </File>
             <File>
               <FileName>network_data.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\User\network_data.c</FilePath>
+              <FilePath>..\..\User\ai\network_data.c</FilePath>
             </File>
             <File>
               <FileName>network_data_params.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\User\network_data_params.c</FilePath>
+              <FilePath>..\..\User\ai\network_data_params.c</FilePath>
             </File>
             <File>
               <FileName>ai_class_labels.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\User\ai_class_labels.c</FilePath>
+              <FilePath>..\..\User\ai\ai_class_labels.c</FilePath>
             </File>
             <File>
               <FileName>network_weights_bin_fast.s</FileName>
               <FileType>2</FileType>
-              <FilePath>..\..\User\network_weights_bin_fast.s</FilePath>
+              <FilePath>..\..\User\ai\network_weights_bin_fast.s</FilePath>
             </File>
             <File>
               <FileName>system_stm32h7rsxx.c</FileName>
@@ -1572,7 +1572,7 @@
             <File>
               <FileName>checkout_icons.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\\..\\User\\ui\\checkout_icons.c</FilePath>
+              <FilePath>..\\..\\User\\ui\\icons\\checkout_icons.c</FilePath>
             </File>
           </Files>
         </Group>

@@ -1,4 +1,4 @@
-﻿#include "ui/lvgl_port.h"
+#include "ui/lvgl_port.h"
 
 #include "lvgl.h"
 #include "./BSP/LCD/lcd.h"

@@ -18,6 +18,7 @@
 #include "network_data.h"
 #include "ai_platform_interface.h"
 #include <string.h>
+#include "stm32h7rsxx_hal.h"
 
 #define AI_NETWORK_DATA_WEIGHTS_ADDR_DST     (0x70400000)
 #define AI_NETWORK_DATA_WEIGHTS_ADDR_SRC     (0x90000000)

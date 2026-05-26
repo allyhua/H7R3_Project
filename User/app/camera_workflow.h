@@ -6,7 +6,7 @@ extern "C" {
 #endif
 
 #include <stdint.h>
-#include "app_x-cube-ai.h"
+#include "ai/app_x-cube-ai.h"
 #include "app/cart_service.h"
 
 typedef enum
